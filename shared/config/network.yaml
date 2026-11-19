@@ -6,6 +6,7 @@ laptop:
   vision_state_port: 5101   # 맵 비전 → 관제 (UDP)
   hand_calib_port: 5102     # 관제 → 손 인식 (UDP)
   map_video_port: 8090      # 맵 위 영상 (HTTP MJPEG)
+  hand_video_port: 8091     # 손 영상 (HTTP MJPEG)
 cars:                       # ip: 확정 필요 (공유기 설정 후)
   "1": {ip: 192.168.0.11, hand_port: 5005, cmd_port: 5006, video_port: 8080, aihand: aihand_A}
   "2": {ip: 192.168.0.12, hand_port: 5005, cmd_port: 5006, video_port: 8080, aihand: aihand_B}
