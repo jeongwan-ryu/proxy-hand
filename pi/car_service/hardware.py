@@ -1,10 +1,10 @@
 """
 작업차 하드웨어 감싸기 (파이에서만 동작). 시험에서는 tests/fakes/의 가짜로 바꿔 끼운다.
 
-- RaspbotHW: 바퀴 모터(Yahboom YB_Pcb_Car, I2C) + 바닥 선 센서 4개(GPIO)
+- RaspbotHW: 바퀴 모터(I2C 0x16, smbus로 직접) + 바닥 선 센서 4개(GPIO)
 - SerialLink: micro:bit USB 시리얼 (인터페이스 정의 7장)
 
-라이브러리(RPi.GPIO, YB_Pcb_Car, pyserial)는 쓰는 순간에 불러온다. 노트북에서 import만 해도 깨지지 않게.
+라이브러리(RPi.GPIO, smbus, pyserial)는 쓰는 순간에 불러온다. 노트북에서 import만 해도 깨지지 않게.
 파이의 Python 버전에 맞추기 위해 3.9 문법까지만 쓴다.
 """
 
@@ -20,19 +20,27 @@ from shared import messages as m
 # 확정 필요 (1차 시험): 선 위에 한 센서씩 올려 보고 순서가 맞는지 확인.
 # Yahboom 센서는 검정에서 LOW(0)를 내므로 car.yaml의 invert_sensors: true가 맞을 가능성이 큼.
 SENSOR_PINS = (13, 15, 11, 7)
-MOTOR_MAX = 255     # YB_Pcb_Car 모터 값 범위 0~255
+
+# 모터 보드 (I2C 0x16). 파이에서 smbus로 직접 움직여 확인한 방식:
+# 레지스터 1에 [왼쪽 방향, 왼쪽 속도, 오른쪽 방향, 오른쪽 속도] (방향 1 = 앞, 0 = 뒤), 레지스터 2에 [0] = 멈춤
+I2C_BUS = 1
+MOTOR_ADDR = 0x16
+REG_RUN = 0x01
+REG_STOP = 0x02
+FORWARD = 1
+MOTOR_MAX = 255     # 속도 값 범위 0~255
 
 
 class RaspbotHW:
     def __init__(self) -> None:
         import RPi.GPIO as GPIO            # 파이 시스템 Python에 있음 (venv --system-site-packages)
-        from YB_Pcb_Car import YB_Pcb_Car  # Yahboom 라이브러리
+        import smbus                       # 모터 보드 I2C (YB_Pcb_Car 라이브러리 없이 직접, 파이에서 확인함)
         self._gpio = GPIO
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BOARD)
         for pin in SENSOR_PINS:
             GPIO.setup(pin, GPIO.IN)
-        self._car = YB_Pcb_Car()
+        self._bus = smbus.SMBus(I2C_BUS)
         self._last: Optional[Tuple[int, int]] = None
         self.stop()
 
@@ -46,9 +54,9 @@ class RaspbotHW:
             return                          # 같은 값을 I2C로 계속 보내지 않음
         self._last = cmd
         if cmd == (0, 0):
-            self._car.Car_Stop()
+            self._bus.write_i2c_block_data(MOTOR_ADDR, REG_STOP, [0])
         else:
-            self._car.Car_Run(*cmd)
+            self._bus.write_i2c_block_data(MOTOR_ADDR, REG_RUN, [FORWARD, cmd[0], FORWARD, cmd[1]])
 
     def stop(self) -> None:
         self._last = None
