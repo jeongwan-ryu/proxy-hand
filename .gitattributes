@@ -1,0 +1,12 @@
+# 줄바꿈 규칙: 저장소에는 LF로 저장하고, 컴퓨터마다 git 설정이 달라도 같게 맞춘다.
+* text=auto eol=lf
+
+# Windows에서만 쓰는 배치 파일은 CRLF여야 확실히 동작
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 그림·바이너리는 건드리지 않음
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.hex binary
