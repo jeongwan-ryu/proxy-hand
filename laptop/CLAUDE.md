@@ -11,7 +11,8 @@
                                 ├─ WebSocket :8000/ws ─ 브라우저 (조종 화면)
                                 ├─ UDP 5005 car{n}/hand ─▶ 파이
                                 └─ TCP 5006 명령·보고 ◀─▶ 파이 (관제가 접속)
-맵 비전 ─ HTTP :8090/video ─▶ 브라우저
+맵 비전 ─ HTTP :8090/video ─▶ 브라우저 (맵 위 영상)
+손 인식 ─ HTTP :8091/video ─▶ 브라우저 (손 영상)
 ```
 
 - 포트·IP는 코드에 쓰지 않고 `shared/config/network.yaml`에서 읽는다.

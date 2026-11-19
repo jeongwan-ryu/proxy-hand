@@ -177,7 +177,8 @@ def load_network(path: pathlib.Path = NETWORK_YAML) -> Dict[str, Any]:
 
     laptop = c.obj(c.get(d, "laptop", ""), "laptop")
     c.text(laptop, "ip", "laptop")
-    for key in ("web_port", "hand_pose_port", "vision_state_port", "hand_calib_port", "map_video_port"):
+    for key in ("web_port", "hand_pose_port", "vision_state_port", "hand_calib_port", "map_video_port",
+                "hand_video_port"):
         c.port(laptop, key, "laptop")
 
     cars = c.obj(c.get(d, "cars", ""), "cars")

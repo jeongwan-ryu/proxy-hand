@@ -296,6 +296,7 @@ FIXED_FIELDS: Dict[str, Tuple[Dict[str, Check], Dict[str, Check]]] = {
                 "hand": c_obj({"service": c_bool, "detected": c_bool, "calibrated": c_bool}),
                 "vision": c_obj({"service": c_bool}),
                 "map_video_url": c_str,
+                "hand_video_url": c_str,
                 "tasks": c_list(c_obj(TASK_ENTRY_FIELDS))}, {}),
     UI_ALERT: ({"level": c_enum(ALERT_LEVELS), "car": c_nullable(c_car),
                 "code": c_enum(ALL_CODES), "text": c_str}, {}),
