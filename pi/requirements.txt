@@ -1,0 +1,5 @@
+# 파이 (Raspbot 기본 이미지의 Python 3) — 시스템 설계 3.6
+# 가상 환경은 python3 -m venv --system-site-packages 로 만든다 (Yahboom 라이브러리를 같이 쓰기 위해).
+pyserial
+pyyaml
+opencv-python-headless

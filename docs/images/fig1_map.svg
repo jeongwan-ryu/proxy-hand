@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 590" width="760" height="590" role="img" aria-label="맵 평면도: 왼쪽 분주 구역 고리에는 보관함과 콕, 오른쪽 측정 구역 고리에는 측정기가 있고, 두 고리 사이 작업대에서 바이알을 넘겨준다">
+<style>
+.t{fill:#1d2327;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:13px}
+.ts{fill:#5d6870;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:11.5px}
+.tb{fill:#1d2327;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:14px;font-weight:700}
+.tm{fill:#0f7b8a;font-family:Consolas,'IBM Plex Mono',monospace;font-size:12px}
+.tw{fill:#2f6fd6;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;font-weight:500}
+.tr{fill:#c62f2f;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;font-weight:700}
+.tg{fill:#2c8a4b;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;font-weight:700}
+.tp{fill:#c96a12;font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:11.5px;font-weight:500}
+.zone{fill:none;stroke:#cfd6db;stroke-width:1.5;stroke-dasharray:6 5}
+.z1{fill:#e9f0fb;stroke:none} .z2{fill:#f6ecf7;stroke:none}
+.box{fill:#ffffff;stroke:#1d2327;stroke-width:1.4}
+.boxa{fill:#dff1f3;stroke:#0f7b8a;stroke-width:1.6}
+.boxr{fill:#e0f2e6;stroke:#2c8a4b;stroke-width:1.6}
+.boxp{fill:#fbe9d8;stroke:#c96a12;stroke-width:1.2}
+.boxw{fill:#fbe1e1;stroke:#c62f2f;stroke-width:1.2}
+.trk{fill:none;stroke:#1d2327;stroke-width:7}
+.stopl{stroke:#1d2327;stroke-width:5}
+.wifi{fill:none;stroke:#2f6fd6;stroke-width:2.2;stroke-dasharray:7 5}
+.usb{fill:none;stroke:#1d2327;stroke-width:2.2}
+.pow{fill:none;stroke:#c96a12;stroke-width:2}
+.arr{fill:none;stroke:#1d2327;stroke-width:1.6}
+.glass{stroke:#8cc8e8;stroke-width:8;opacity:.8}
+.fillfg{fill:#1d2327} .fillw{fill:#2f6fd6} .filla{fill:#0f7b8a}
+.car{fill:#ffffff;stroke:#1d2327;stroke-width:1.8}
+.hand{fill:#0f7b8a;stroke:none}
+</style>
+<rect x="0" y="0" width="760" height="590" fill="#ffffff"/>
+<defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fillfg"/></marker>
+    </defs>
+    <!-- board and zones -->
+    <rect x="40" y="50" width="680" height="440" rx="6" class="zone"/>
+    <rect x="44" y="54" width="318" height="432" rx="4" class="z1"/>
+    <rect x="398" y="54" width="318" height="432" rx="4" class="z2"/>
+    <text x="380" y="40" text-anchor="middle" class="ts">뒤쪽 벽 · 바닥판 약 120 × 80 cm</text>
+    <text x="205" y="80" text-anchor="middle" class="tb">분주 구역 · 작업차 1</text>
+    <text x="555" y="80" text-anchor="middle" class="tb">측정 구역 · 작업차 2</text>
+    <!-- front glass -->
+    <line x1="40" y1="492" x2="720" y2="492" class="glass"/>
+    <text x="380" y="520" text-anchor="middle" class="tb">앞쪽: 투명 창 (납유리 창 역할)</text>
+    <text x="380" y="540" text-anchor="middle" class="ts">조종자가 여기 앉아 창 너머로 직접 봅니다</text>
+
+    <!-- loops -->
+    <rect x="80" y="120" width="250" height="270" rx="50" class="trk"/>
+    <rect x="430" y="120" width="250" height="270" rx="50" class="trk"/>
+    <!-- direction arrows loop1 -->
+    <path d="M150 362 l14 0" class="arr" marker-end="url(#ah)"/>
+    <path d="M302 270 l0 -14" class="arr" marker-end="url(#ah)"/>
+    <path d="M150 148 l-14 0" class="arr" marker-end="url(#ah)"/>
+    <path d="M108 240 l0 14" class="arr" marker-end="url(#ah)"/>
+    <!-- direction arrows loop2 -->
+    <path d="M610 362 l14 0" class="arr" marker-end="url(#ah)"/>
+    <path d="M652 270 l0 -14" class="arr" marker-end="url(#ah)"/>
+    <path d="M500 148 l-14 0" class="arr" marker-end="url(#ah)"/>
+    <path d="M458 220 l0 14" class="arr" marker-end="url(#ah)"/>
+
+    <!-- overhead camera -->
+    <circle cx="380" cy="118" r="14" class="boxa"/>
+    <circle cx="380" cy="118" r="5" class="filla"/>
+    <text x="380" y="98" text-anchor="middle" class="ts">맵 위 웹캠</text>
+
+    <!-- wait spots -->
+    <line x1="230" y1="106" x2="230" y2="134" class="stopl"/>
+    <text x="230" y="168" text-anchor="middle" class="t">대기 1</text>
+    <line x1="580" y1="106" x2="580" y2="134" class="stopl"/>
+    <text x="580" y="168" text-anchor="middle" class="t">대기 2</text>
+
+    <!-- storage: bottom of loop1 -->
+    <line x1="150" y1="376" x2="150" y2="404" class="stopl"/>
+    <line x1="185" y1="376" x2="185" y2="404" class="stopl"/>
+    <line x1="220" y1="376" x2="220" y2="404" class="stopl"/>
+    <rect x="132" y="414" width="106" height="32" rx="4" class="box"/>
+    <circle cx="150" cy="430" r="8" class="box"/><circle cx="185" cy="430" r="8" class="boxa"/><circle cx="220" cy="430" r="8" class="box"/>
+    <text x="150" y="434" text-anchor="middle" class="ts">1</text><text x="185" y="434" text-anchor="middle" class="ts">2</text><text x="220" y="434" text-anchor="middle" class="ts">3</text>
+    <text x="185" y="468" text-anchor="middle" class="tb">보관함 (빈 바이알 3칸)</text>
+
+    <!-- cock: right edge of loop1 -->
+    <line x1="316" y1="200" x2="344" y2="200" class="stopl"/>
+    <rect x="300" y="176" width="60" height="48" rx="3" fill="none" stroke="#0f7b8a" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="388" y="196" text-anchor="middle" class="tb">콕</text>
+    <text x="388" y="212" text-anchor="middle" class="ts">(다리)</text>
+
+    <!-- workbench: shared between loops -->
+    <line x1="316" y1="300" x2="344" y2="300" class="stopl"/>
+    <line x1="416" y1="300" x2="444" y2="300" class="stopl"/>
+    <rect x="358" y="284" width="44" height="32" rx="4" class="boxa"/>
+    <circle cx="380" cy="300" r="8" class="box"/>
+    <text x="380" y="334" text-anchor="middle" class="tb">작업대</text>
+    <text x="380" y="350" text-anchor="middle" class="ts">넘겨주는 자리</text>
+
+    <!-- measuring device: bottom of loop2 -->
+    <line x1="555" y1="376" x2="555" y2="404" class="stopl"/>
+    <rect x="520" y="414" width="70" height="32" rx="4" class="boxw"/>
+    <circle cx="540" cy="430" r="7" class="box"/>
+    <circle cx="572" cy="430" r="6" fill="#c62f2f"/>
+    <text x="555" y="468" text-anchor="middle" class="tb">측정기 (바이알 자리 + 버튼)</text>
+
+    <!-- car 1 at cock, vertical (moving up), hand on its right (+x) -->
+    <rect x="317" y="180" width="26" height="40" rx="5" class="car"/>
+    <circle cx="350" cy="200" r="6" class="hand"/>
+    <text x="330" y="204" text-anchor="middle" class="tm">1</text>
+    <!-- car 2 at wait 2, moving left, hand on its right (up) -->
+    <rect x="560" y="107" width="40" height="26" rx="5" class="car"/>
+    <circle cx="580" cy="100" r="6" class="hand"/>
+    <text x="580" y="124" text-anchor="middle" class="tm">2</text>
+
+    <!-- callouts -->
+    <path d="M316 196 L270 226" class="arr"/>
+    <rect x="112" y="226" width="186" height="44" rx="4" class="boxa"/>
+    <text x="205" y="244" text-anchor="middle" class="t">작업차 1: 콕을 열어</text>
+    <text x="205" y="262" text-anchor="middle" class="t">작업대 바이알에 약 담는 중</text>
+    <path d="M585 134 L580 196" class="arr"/>
+    <rect x="470" y="196" width="196" height="44" rx="4" class="boxw"/>
+    <text x="568" y="214" text-anchor="middle" class="tr">작업차 2: 다 채운 바이알이</text>
+    <text x="568" y="232" text-anchor="middle" class="tr">작업대에 나오면 가지러 감</text>
+</svg>

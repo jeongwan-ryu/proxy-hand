@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 880" width="1000" height="880" role="img" aria-label="ProxyHand 소프트웨어 구성: Client, Server, Equip 세 층">
+<style>
+text{font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;fill:#1d2327}
+.title{font-size:24px;font-weight:700}
+.lay{font-size:13px;font-weight:700}
+.lays{font-size:11px;fill:#5d6870}
+.big{font-size:18px;font-weight:700}
+.mid{font-size:14px;font-weight:700}
+.sm{font-size:12px}
+.note{font-size:12px;fill:#5d6870}
+.lbl{font-size:12.5px;font-weight:500}
+.wht{fill:#ffffff;font-size:14px;font-weight:700}
+.line{fill:none;stroke:#1d2327;stroke-width:1.4}
+</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1d2327"/></marker>
+</defs>
+<rect width="1000" height="880" fill="#ffffff"/>
+<text x="110" y="36" class="title">ProxyHand — SW 구성</text>
+
+<!-- bands -->
+<rect x="0" y="55" width="1000" height="160" fill="#f4f4f4" stroke="#bdbdbd"/>
+<rect x="0" y="215" width="1000" height="260" fill="#fff2cc" stroke="#e0c060"/>
+<rect x="0" y="475" width="1000" height="400" fill="#f8d7d5" stroke="#d07070"/>
+<rect x="0" y="55" width="90" height="820" fill="none" stroke="#bdbdbd"/>
+<text x="45" y="131" text-anchor="middle" class="lay">Client</text>
+<text x="45" y="148" text-anchor="middle" class="lays">조종</text>
+<text x="45" y="341" text-anchor="middle" class="lay">Server</text>
+<text x="45" y="358" text-anchor="middle" class="lays">노트북</text>
+<text x="45" y="671" text-anchor="middle" class="lay">Equip</text>
+<text x="45" y="688" text-anchor="middle" class="lays">작업차</text>
+
+<!-- Client -->
+<rect x="130" y="80" width="440" height="110" rx="18" fill="#f3f9c1" stroke="#1d2327"/>
+<text x="350" y="130" text-anchor="middle" class="big">조종 화면 (웹 브라우저)</text>
+<text x="350" y="154" text-anchor="middle" class="note">버튼 · 작업 목록 · 작업차 상태 · 영상</text>
+<ellipse cx="820" cy="135" rx="70" ry="25" fill="#fff" stroke="#1d2327"/>
+<text x="820" y="140" text-anchor="middle" class="sm">내장 웹캠</text>
+
+<!-- Server -->
+<rect x="120" y="235" width="850" height="220" fill="#ffffff" stroke="#1d2327"/>
+<text x="136" y="257" class="mid">노트북 (관제 서버)</text>
+
+<path d="M145 300 L145 370 A55 12 0 0 0 255 370 L255 300" fill="#ffcce6" stroke="#1d2327"/>
+<ellipse cx="200" cy="300" rx="55" ry="12" fill="#ffcce6" stroke="#1d2327"/>
+<text x="200" y="338" text-anchor="middle" class="mid">파일 저장소</text>
+<text x="200" y="357" text-anchor="middle" class="note">작업·설정·로그</text>
+
+<rect x="320" y="290" width="280" height="100" rx="12" fill="#dae8fc" stroke="#1d2327"/>
+<text x="460" y="333" text-anchor="middle" class="big">관제 서비스</text>
+<text x="460" y="358" text-anchor="middle" class="sm">진행 관리 · 기록·재생 · 웹 서버</text>
+<path d="M257 340 L318 340" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="287" y="330" text-anchor="middle" class="sm">읽기·쓰기</text>
+
+<rect x="700" y="255" width="240" height="70" rx="12" fill="#d5f5e3" stroke="#1d2327"/>
+<text x="820" y="295" text-anchor="middle" class="mid">손 인식 서비스</text>
+<rect x="700" y="365" width="240" height="70" rx="12" fill="#d5f5e3" stroke="#1d2327"/>
+<text x="820" y="405" text-anchor="middle" class="mid">맵 비전 서비스</text>
+<path d="M698 290 L602 318" class="line" marker-end="url(#a)"/>
+<text x="680" y="282" text-anchor="end" class="sm">UDP</text>
+<path d="M698 400 L602 365" class="line" marker-end="url(#a)"/>
+<text x="680" y="415" text-anchor="end" class="sm">UDP</text>
+
+<path d="M460 192 L460 288" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="470" y="226" class="lbl">HTTP / WebSocket</text>
+<path d="M820 161 L820 253" class="line" marker-end="url(#a)"/>
+<text x="830" y="210" class="lbl">손 영상</text>
+
+<!-- Equip -->
+<ellipse cx="870" cy="560" rx="72" ry="26" fill="#fff" stroke="#1d2327"/>
+<text x="870" y="565" text-anchor="middle" class="sm">맵 위 웹캠</text>
+<path d="M870 533 L870 437" class="line" marker-end="url(#a)"/>
+<text x="880" y="495" class="lbl">USB</text>
+
+<rect x="120" y="500" width="640" height="355" fill="#ffffff" stroke="#c62f2f"/>
+<text x="136" y="522" class="mid">작업차 ×2 (두 대에 같은 코드)</text>
+
+<rect x="140" y="535" width="600" height="112" rx="14" fill="#a680b8" stroke="#6b4a80"/>
+<text x="156" y="556" class="wht">작업차 컨트롤러 (라즈베리 파이)</text>
+<rect x="160" y="568" width="370" height="64" rx="10" fill="#f9ccff" stroke="#1d2327"/>
+<text x="345" y="595" text-anchor="middle" class="mid">작업차 서비스</text>
+<text x="345" y="617" text-anchor="middle" class="sm">주행 · 손 명령 전달 · 안전 멈춤</text>
+<rect x="550" y="568" width="170" height="64" rx="10" fill="#f9ccff" stroke="#1d2327"/>
+<text x="635" y="605" text-anchor="middle" class="mid">영상 서비스</text>
+
+<path d="M420 392 L420 566" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="412" y="470" text-anchor="end" class="lbl">TCP (명령·상태)</text>
+<text x="412" y="488" text-anchor="end" class="lbl">UDP (손 각도)</text>
+
+<path d="M635 566 L635 160 L572 160" class="line" marker-end="url(#a)"/>
+<path d="M760 363 L760 345 L637 345" class="line"/>
+<text x="643" y="192" class="lbl">HTTP 영상</text>
+<text x="643" y="208" class="note">(작업차 카메라 · 맵 위)</text>
+
+<!-- AiHand -->
+<rect x="140" y="665" width="220" height="170" fill="#f8d7d5" stroke="#c62f2f"/>
+<text x="154" y="687" class="mid">AiHand</text>
+<rect x="170" y="700" width="170" height="44" rx="10" fill="#f9ccff" stroke="#1d2327"/>
+<text x="255" y="727" text-anchor="middle" class="mid">micro:bit 손 제어</text>
+<path d="M255 634 L255 698" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="263" y="660" class="sm">USB 시리얼</text>
+<ellipse cx="255" cy="800" rx="40" ry="20" fill="#fff" stroke="#1d2327"/>
+<text x="255" y="805" text-anchor="middle" class="sm">서보 ×6</text>
+<path d="M255 746 L255 778" class="line" marker-end="url(#a)"/>
+<text x="263" y="767" class="note">확장보드 경유</text>
+
+<!-- Raspbot -->
+<rect x="375" y="665" width="365" height="170" fill="#f8d7d5" stroke="#c62f2f"/>
+<text x="728" y="687" text-anchor="end" class="mid">Raspbot</text>
+<ellipse cx="425" cy="800" rx="38" ry="20" fill="#fff" stroke="#1d2327"/>
+<text x="425" y="805" text-anchor="middle" class="sm">바퀴 모터</text>
+<ellipse cx="505" cy="800" rx="38" ry="20" fill="#fff" stroke="#1d2327"/>
+<text x="505" y="805" text-anchor="middle" class="sm">선 센서 ×4</text>
+<ellipse cx="635" cy="800" rx="38" ry="20" fill="#fff" stroke="#1d2327"/>
+<text x="635" y="805" text-anchor="middle" class="sm">카메라</text>
+<path d="M425 634 L425 778" class="line" marker-end="url(#a)"/>
+<path d="M505 779 L505 634" class="line" marker-end="url(#a)"/>
+<path d="M635 779 L635 634" class="line" marker-end="url(#a)"/>
+</svg>

@@ -1,0 +1,18 @@
+# 영상 서비스 — 부팅 때 자동 실행, 죽으면 자동 재시작 (시스템 설계 3.5)
+# 설치: sudo cp pi/systemd/proxyhand-video.service /etc/systemd/system/
+#       sudo systemctl daemon-reload && sudo systemctl enable --now proxyhand-video
+# User, 경로: 확정 필요 (파이 사용자 이름, 저장소 위치)
+[Unit]
+Description=ProxyHand 영상 서비스
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/proxy-hand
+ExecStart=/home/pi/proxy-hand/.venv/bin/python -m pi.video_service.main
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

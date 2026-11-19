@@ -1,0 +1,17 @@
+# 네트워크 설정 (사람이 고침) — 인터페이스 정의 9.1
+laptop:
+  ip: 192.168.0.10          # 확정 필요 (공유기 설정 후)
+  web_port: 8000            # 조종 화면 (HTTP + WebSocket)
+  hand_pose_port: 5100      # 손 인식 → 관제 (UDP)
+  vision_state_port: 5101   # 맵 비전 → 관제 (UDP)
+  hand_calib_port: 5102     # 관제 → 손 인식 (UDP)
+  map_video_port: 8090      # 맵 위 영상 (HTTP MJPEG)
+cars:                       # ip: 확정 필요 (공유기 설정 후)
+  "1": {ip: 192.168.0.11, hand_port: 5005, cmd_port: 5006, video_port: 8080, aihand: aihand_A}
+  "2": {ip: 192.168.0.12, hand_port: 5005, cmd_port: 5006, video_port: 8080, aihand: aihand_B}
+timing:
+  heartbeat_s: 0.2          # 관제 → 파이 생존 신호 간격
+  link_timeout_s: 1.0       # 이만큼 안 오면 파이가 멈춤 (SR-38)
+  status_period_s: 0.5      # 파이 → 관제 status 간격
+  reconnect_s: 1.0          # 관제가 파이에 다시 접속하는 간격
+  service_timeout_s: 1.0    # hand/pose, vision/state가 이만큼 안 오면 "꺼짐"

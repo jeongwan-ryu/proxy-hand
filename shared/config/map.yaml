@@ -1,0 +1,37 @@
+# 맵 설정 (사람이 고침) — 인터페이스 정의 9.2
+loops:                      # 고리별 정지선 수
+  dispense: 6               # 분주 구역 (작업차 1)
+  measure: 3                # 측정 구역 (작업차 2)
+cars:                       # start_when: 혼자 하기 반복을 시작하는 조건 (bench_empty = 작업대 비어 있음, bench_filled = 담기 끝)
+  "1": {loop: dispense, wait_station: wait_1, start_when: bench_empty}
+  "2": {loop: measure,  wait_station: wait_2, start_when: bench_filled}
+stations:                   # line: 대기 정거장에서 몇 번째 정지선인지
+                            # segment_s: 앞 정지선 끝 → 이 정지선 시작까지 보통 속도로 걸리는 시간(초), 확정 필요 (1차 시험 후 입력)
+  - {id: wait_1,    name: 대기 1,          loop: dispense, line: 0, segment_s: 0}
+  - {id: storage_1, name: 보관함 1번 칸,    loop: dispense, line: 1, segment_s: 0, slot: 1}
+  - {id: storage_2, name: 보관함 2번 칸,    loop: dispense, line: 2, segment_s: 0, slot: 2}
+  - {id: storage_3, name: 보관함 3번 칸,    loop: dispense, line: 3, segment_s: 0, slot: 3}
+  - {id: bench_1,   name: 작업대 (작업차 1), loop: dispense, line: 4, segment_s: 0}
+  - {id: cock,      name: 콕,              loop: dispense, line: 5, segment_s: 0}
+  - {id: wait_2,    name: 대기 2,          loop: measure,  line: 0, segment_s: 0}
+  - {id: bench_2,   name: 작업대 (작업차 2), loop: measure,  line: 1, segment_s: 0}
+  - {id: meter,     name: 측정기,           loop: measure,  line: 2, segment_s: 0}
+line_check:                 # 정지선 놓침 확인 (시스템 설계 10.3)
+  normal_factor: 1.5        # 보통 속도 구간: segment_s × 이 값을 넘으면 line_missed (잠정)
+  slow_factor: 3.0          # 느린 속도 구간(목표 바로 앞) (잠정)
+markers:
+  dictionary: DICT_4X4_50
+  slot_ids: {"1": 1, "2": 2, "3": 3}
+  bench_id: 4
+  min_perimeter_rate: 0.01  # OpenCV minMarkerPerimeterRate
+vision:                     # 판단 기준값 (잠정)
+  hidden_s: 0.5             # 마커가 이만큼 계속 안 보이면 "있음", 계속 보이면 "없음"
+  hold_settle_s: 0.5        # 보류가 풀린 뒤 이만큼 같은 값이어야 씀
+  led_on_s: 0.3             # LED가 이만큼 켜져 있어야 "켜짐"
+drive_pose:                 # 주행 자세 (시스템 설계 9.5)
+  enabled: true             # false면 goto 전에 손목을 돌리지 않음
+  settle_s: 0.3             # 주행 자세를 보낸 뒤 goto까지 기다리는 시간
+auto:
+  goto_timeout_s: 30        # 잠정
+  cock_hold_s: 1.0          # 콕을 연 채로 기다리는 시간 (가르칠 때 참고, 잠정)
+  condition_check_s: 0.2    # 대기 중 출발 조건 다시 보는 간격

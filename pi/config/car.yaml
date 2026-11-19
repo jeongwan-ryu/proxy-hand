@@ -1,0 +1,18 @@
+# 작업차 설정 (사람이 고침, 파이마다 따로) — 인터페이스 정의 9.3
+# 두 파이는 같은 코드를 쓰고 car_id만 다르다 (1 또는 2).
+car_id: 1
+serial_port: /dev/ttyACM0
+serial_baud: 115200
+serial_timeout_s: 0.2
+serial_max_fail: 3
+sensor_hz: 50               # 선 센서 읽기 (잠정)
+invert_sensors: false       # 라이브러리가 검정=0이면 true
+speed_normal: 0             # 모터 값, 확정 필요 (1차 시험 후). 0이면 작업차 서비스가 시작 때 오류
+speed_slow: 0               # 확정 필요
+turn_small: 0               # 선이 조금 벗어났을 때 바깥쪽 바퀴에서 뺄 값, 확정 필요
+turn_big: 0                 # 많이 벗어났을 때, 확정 필요
+line_lost_search_s: 0.5
+stopline_min_black: 3       # 검정이 이 개수 이상이면 정지선
+stopline_confirm_reads: 2   # 연속으로 이만큼 읽혀야 시작/끝으로 봄
+video: {device: 0, width: 640, height: 480, fps: 15, port: 8080}
+log_dir: ~/proxyhand/logs

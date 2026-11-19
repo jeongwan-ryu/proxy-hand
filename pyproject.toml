@@ -1,0 +1,5 @@
+# 시험 설정. 실행: 저장소 맨 위에서  python -m pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

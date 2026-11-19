@@ -1,0 +1,6 @@
+# 노트북 설정 (사람이 고침, 노트북에만) — 인터페이스 정의 9.4
+hand_camera_index: 0        # 손 인식용 웹캠 번호 (내장 웹캠). 맵 위 웹캠 번호는 topcam.json
+hand_side: right            # 따라 할 손: right / left
+hand_max_num: 2             # MediaPipe가 찾을 최대 손 개수. 고른 쪽 손이 여럿이면 가장 큰 손
+mirror: true                # 사진을 좌우로 뒤집어 넣음 (MediaPipe 왼손·오른손 구분 기준)
+smooth_frames: 5            # 떨림 줄이기에 평균 낼 최근 값 개수

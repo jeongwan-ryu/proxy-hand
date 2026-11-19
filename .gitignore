@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+venv/
+
+# 실행 결과 (노트북 로그)
+data/logs/*
+!data/logs/.gitkeep
+
+# 편집기·OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

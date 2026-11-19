@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 810" width="1000" height="810" role="img" aria-label="ProxyHand 하드웨어 구성: Client, Server, Equip 세 층">
+<style>
+text{font-family:'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif;fill:#1d2327}
+.title{font-size:24px;font-weight:700}
+.lay{font-size:13px;font-weight:700}
+.lays{font-size:11px;fill:#5d6870}
+.big{font-size:19px;font-weight:700}
+.mid{font-size:14px;font-weight:700}
+.sm{font-size:12px}
+.note{font-size:12px;fill:#5d6870}
+.lbl{font-size:12.5px;font-weight:500}
+.wht{fill:#ffffff;font-size:17px;font-weight:700}
+.line{fill:none;stroke:#1d2327;stroke-width:1.4}
+</style>
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1d2327"/></marker>
+</defs>
+<rect width="1000" height="810" fill="#ffffff"/>
+<text x="110" y="36" class="title">ProxyHand — HW 구성</text>
+
+<!-- bands -->
+<rect x="0" y="55" width="1000" height="170" fill="#f4f4f4" stroke="#bdbdbd"/>
+<rect x="0" y="225" width="1000" height="170" fill="#fff2cc" stroke="#e0c060"/>
+<rect x="0" y="395" width="1000" height="410" fill="#f8d7d5" stroke="#d07070"/>
+<rect x="0" y="55" width="90" height="750" fill="none" stroke="#bdbdbd"/>
+<text x="45" y="136" text-anchor="middle" class="lay">Client</text>
+<text x="45" y="153" text-anchor="middle" class="lays">조종</text>
+<text x="45" y="306" text-anchor="middle" class="lay">Server</text>
+<text x="45" y="323" text-anchor="middle" class="lays">관제</text>
+<text x="45" y="596" text-anchor="middle" class="lay">Equip</text>
+<text x="45" y="613" text-anchor="middle" class="lays">장비</text>
+
+<!-- Client -->
+<rect x="130" y="75" width="470" height="130" rx="16" fill="#ffffff" stroke="#1d2327" stroke-width="1.3"/>
+<text x="365" y="108" text-anchor="middle" class="big">노트북 — 조종 쪽 (Windows)</text>
+<ellipse cx="265" cy="160" rx="72" ry="24" fill="#fff" stroke="#1d2327"/>
+<text x="265" y="165" text-anchor="middle" class="sm">내장 웹캠 (손 촬영)</text>
+<ellipse cx="465" cy="160" rx="92" ry="24" fill="#fff" stroke="#1d2327"/>
+<text x="465" y="165" text-anchor="middle" class="sm">화면 · 키보드 (스페이스바)</text>
+<text x="640" y="130" class="note">조종 쪽과 관제 서버는</text>
+<text x="640" y="148" class="note">같은 노트북 1대입니다.</text>
+
+<!-- Server -->
+<rect x="130" y="245" width="470" height="130" rx="16" fill="#ffffff" stroke="#1d2327" stroke-width="1.3"/>
+<text x="365" y="300" text-anchor="middle" class="big">노트북 — 관제 서버</text>
+<text x="365" y="326" text-anchor="middle" class="sm">손 인식 · 맵 비전 · 관제 · 기록·재생 · 웹 서버</text>
+<rect x="700" y="265" width="260" height="90" rx="16" fill="#ffffff" stroke="#1d2327" stroke-width="1.3"/>
+<text x="830" y="303" text-anchor="middle" class="mid">시연 전용 공유기</text>
+<text x="830" y="327" text-anchor="middle" class="note">5GHz · 행사장 Wi-Fi 안 씀</text>
+
+<path d="M365 207 L365 243" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="375" y="230" class="lbl">같은 노트북 안</text>
+<path d="M602 310 L698 310" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="650" y="301" text-anchor="middle" class="lbl">Wi-Fi</text>
+
+<!-- Equip -->
+<ellipse cx="200" cy="470" rx="72" ry="26" fill="#fff" stroke="#1d2327"/>
+<text x="200" y="475" text-anchor="middle" class="sm">맵 위 웹캠</text>
+<path d="M200 443 L200 377" class="line" marker-end="url(#a)"/>
+<text x="210" y="415" class="lbl">USB</text>
+
+<rect x="300" y="420" width="660" height="350" fill="#ffffff" stroke="#c62f2f" stroke-width="1.2"/>
+<text x="316" y="443" class="mid">작업차 ×2 (두 대 구성 같음)</text>
+
+<rect x="320" y="455" width="620" height="50" rx="12" fill="#7ea6e0" stroke="#4a76b8"/>
+<text x="630" y="487" text-anchor="middle" class="wht">작업차 컨트롤러 (라즈베리 파이)</text>
+<path d="M830 357 L830 453" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="840" y="412" class="lbl">Wi-Fi</text>
+
+<!-- Raspbot -->
+<rect x="320" y="540" width="390" height="210" fill="#f8d7d5" stroke="#c62f2f"/>
+<text x="334" y="562" class="mid">Raspbot</text>
+<ellipse cx="430" cy="700" rx="38" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="430" y="705" text-anchor="middle" class="sm">바퀴 모터</text>
+<ellipse cx="510" cy="700" rx="38" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="510" y="705" text-anchor="middle" class="sm">선 센서 ×4</text>
+<ellipse cx="590" cy="700" rx="38" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="590" y="705" text-anchor="middle" class="sm">카메라</text>
+<ellipse cx="668" cy="700" rx="34" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="668" y="705" text-anchor="middle" class="sm">배터리</text>
+<path d="M430 507 L430 676" class="line" marker-end="url(#a)"/>
+<path d="M510 677 L510 507" class="line" marker-end="url(#a)"/>
+<path d="M590 677 L590 507" class="line" marker-end="url(#a)"/>
+<path d="M668 677 L668 507" class="line" marker-end="url(#a)"/>
+
+<!-- AiHand -->
+<rect x="725" y="540" width="215" height="210" fill="#f8d7d5" stroke="#c62f2f"/>
+<text x="739" y="562" class="mid">AiHand</text>
+<rect x="745" y="585" width="175" height="48" rx="10" fill="#dae8fc" stroke="#4a76b8"/>
+<text x="832" y="607" text-anchor="middle" class="mid">micro:bit</text>
+<text x="832" y="624" text-anchor="middle" class="note">+ 확장보드</text>
+<path d="M832 507 L832 583" class="line" marker-start="url(#a)" marker-end="url(#a)"/>
+<text x="842" y="530" class="lbl">USB 시리얼</text>
+<ellipse cx="785" cy="700" rx="38" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="785" y="705" text-anchor="middle" class="sm">서보 ×6</text>
+<ellipse cx="880" cy="700" rx="48" ry="22" fill="#fff" stroke="#1d2327"/>
+<text x="880" y="705" text-anchor="middle" class="sm">배터리 7.4V</text>
+<path d="M785 635 L785 676" class="line" marker-end="url(#a)"/>
+<path d="M880 677 L880 635" class="line" marker-end="url(#a)"/>
+
+<text x="300" y="792" class="note">WonderCam은 AiHand에 붙어 있지만 이번에는 쓰지 않습니다. 콕·측정기·보관함·작업대는 전선 연결이 없어 이 그림에서 뺐습니다.</text>
+</svg>
