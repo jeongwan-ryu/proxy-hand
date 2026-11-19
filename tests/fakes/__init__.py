@@ -1,5 +1,5 @@
 """
-하드웨어·상대 서비스 없이 시험하기 위한 가짜들 (아직 비어 있음).
+하드웨어·상대 서비스 없이 시험하기 위한 가짜들 (fake_control·fake_serial·fake_line 있음, fake_car는 아직).
 
 만들 것과 담당 (구현하면서 필요한 사람이 만든다):
 - fake_car.py      가짜 작업차: TCP 5006을 열고 goto에 status·arrived로 답함      — 이보연 (관제 시험용)
