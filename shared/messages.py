@@ -96,6 +96,10 @@ CALIB_STEPS = ("open", "fist", "reset")                          # 5.2
 ALERT_LEVELS = ("info", "warn", "error")                         # 6.1
 RESULTS = ("success", "fail")                                    # 6.2 mark_result
 SLOT_KEYS = ("1", "2", "3")
+# 6.1 cars.n.hand_ctl: 손이 그 작업차 AiHand를 움직이는지, 아니면 왜 아닌지 (시스템 설계 9.6).
+# 관제가 앞에서부터 먼저 맞는 것을 고르는 순서
+HAND_CTL_STATES = ("not_selected", "mode", "link", "no_calib", "hand_service", "hand_uncalibrated",
+                   "hand_lost", "moving", "locked", "catching", "following")
 
 # 8장 오류·알림 코드
 PI_ERROR_CODES = ("line_lost", "serial_fail", "line_missed", "link_lost")
@@ -273,6 +277,9 @@ CAR_STATE_FIELDS: Dict[str, Check] = {          # ui/state 의 cars."1" 안
     "video_url": c_str,
     "allowed": c_list(c_str),
     "stations": c_list(c_obj({"id": STATION, "name": c_str})),
+    "hand_ctl": c_enum(HAND_CTL_STATES),
+    "aihand_fingers": c_nullable(c_list(c_range(0.0, 1.0), 5)),
+    "hand_attached": c_list(c_bool, 5),
 }
 
 TASK_ENTRY_FIELDS: Dict[str, Check] = {"id": c_str, "name": c_str, "car": c_car, "created": c_str}
@@ -294,7 +301,8 @@ FIXED_FIELDS: Dict[str, Tuple[Dict[str, Check], Dict[str, Check]]] = {
                 "bench_vial": MARKER,
                 "slots": c_map(SLOT_KEYS, MARKER),
                 "cock_led": c_nullable(c_bool),
-                "hand": c_obj({"service": c_bool, "detected": c_bool, "calibrated": c_bool}),
+                "hand": c_obj({"service": c_bool, "detected": c_bool, "calibrated": c_bool,
+                               "fingers": c_nullable(c_list(c_range(0.0, 1.0), 5))}),
                 "vision": c_obj({"service": c_bool}),
                 "map_video_url": c_str,
                 "hand_video_url": c_str,

@@ -8,7 +8,7 @@
     core.ui_state()
 
 now는 time.monotonic() 기준 초. 규칙은 시스템 설계 5.2(보류), 6장(모드·작업대), 7장(혼자 하기),
-8장(가르치기·재생), 9.3·9.5(자세), 11장(오류), 12장(버튼 조건)을 따른다.
+8장(가르치기·재생), 9.3·9.5(자세), 9.6(손 따라 하기 시작·이어 붙이기), 11장(오류), 12장(버튼 조건)을 따른다.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ from shared import config
 from shared import messages as m
 
 from . import pose
+from .handgate import HandGate, fingers_r
 from .tasks import STORAGE_ANY, Recorder, TaskError, TaskStore, build_plan, uses_storage
 
 REPLAY_TAIL_REPEAT = 2          # hand 단계 마지막 프레임을 0.1초 간격으로 2번 더 (총 3번, 설계 8장)
@@ -146,6 +147,9 @@ class Control:
         self.hand_fingers: Optional[List[float]] = None
         self.hand_wrist: Optional[float] = None
         self.hand_prev_t: Optional[float] = None
+        self.hand_lost_since: Optional[float] = None
+        # 손 따라 하기 시작·이어 붙이기 (설계 9.6). 손은 조종 대상 한 대에만 가므로 하나만 둠
+        self.gate = HandGate(mp.hand_follow)
 
         # 맵 비전
         self.vision_up = False
@@ -212,6 +216,8 @@ class Control:
         self.log.event("mode_change", car=car.n, **{"from": car.mode, "to": new, "cause": cause})
         car.mode = new
         self.dirty = True
+        if car.n == self.selected:
+            self._lock_hand("mode")
 
     def _abort_activity(self, car: Car, reason: str) -> None:
         """혼자 하기·가르치기·보내려던 goto를 끊음."""
@@ -244,6 +250,15 @@ class Control:
             self.dirty = True
         was = self.hand_detected
         self.hand_detected = msg["detected"]
+        if not self.hand_detected:
+            if self.hand_lost_since is None:
+                self.hand_lost_since = now
+            self.gate.reset_start_watch()
+        elif self.hand_lost_since is not None:
+            # 잠깐(lost_lock_s 이하) 놓친 것은 이어서 따라 함 (SR-09), 길면 다시 손을 펴서 시작
+            if now - self.hand_lost_since > self.mp.hand_follow["lost_lock_s"]:
+                self._lock_hand("hand_lost")
+            self.hand_lost_since = None
         if self.hand_calibrated != msg["calibrated"]:
             self.hand_calibrated = msg["calibrated"]
             self.dirty = True
@@ -259,13 +274,29 @@ class Control:
         return (car.n == self.selected and car.mode in ("manual", "teach") and car.link
                 and car.pi_state == "arrived" and car.calib is not None and car.pending_goto is None)
 
+    def _lock_hand(self, reason: str) -> None:
+        """손 따라 하기 잠금: 다시 손을 펴야 시작 (설계 9.6)."""
+        if self.gate.lock():
+            self.log.event("hand_lock", car=self.selected, reason=reason)
+            self.dirty = True
+
     def _live_hand(self, now: float, prev_t: Optional[float]) -> None:
         car = self.cars[self.selected]
-        if not (self.hand_up and self.hand_detected and self.hand_calibrated and self.hand_allowed(car)):
+        if not (self.hand_up and self.hand_detected and self.hand_calibrated and self.hand_allowed(car))                 or self.hand_fingers is None or self.hand_wrist is None:
+            self.gate.reset_start_watch()
             return
-        if self.hand_fingers is None or self.hand_wrist is None:
+        if self.gate.locked:
+            # 손을 쫙 펴서 open_hold_s 유지하면 시작. 이 편 손은 AiHand에 보내지 않음
+            if self.gate.watch_start(self.hand_fingers, now):
+                self.log.event("hand_start", car=car.n)
+                self.dirty = True
             return
-        angles = pose.hand_to_servos(self.hand_fingers, self.hand_wrist, car.calib)  # type: ignore[arg-type]
+        if self.gate.attach(self.hand_fingers, fingers_r(car.last_angles, car.calib)):
+            self.dirty = True
+        if car.last_angles is None and not self.gate.all_attached():
+            return      # AiHand 모양을 모름: 손가락 5개가 모두 붙기(주먹) 전에는 아무것도 보내지 않음 (설계 9.6)
+        wanted = pose.hand_to_servos(self.hand_fingers, self.hand_wrist, car.calib)  # type: ignore[arg-type]
+        angles = self.gate.merge(wanted, car.last_angles)
         if not pose.changed_enough(angles, car.last_angles):
             return
         ms = LIVE_MS_DEFAULT if prev_t is None else max(10, min(200, int(round((now - prev_t) * 1000))))
@@ -461,6 +492,8 @@ class Control:
         self.dirty = True
 
     def _on_arrived(self, car: Car, station: str, now: float) -> None:
+        if car.n == self.selected:
+            self._lock_hand("arrived")          # 이동 뒤에는 다시 손을 펴서 시작 (설계 9.6)
         if car.goto_target == station:
             car.goto_target = car.goto_deadline = None
         if car.pending_set_station == station:
@@ -623,6 +656,7 @@ class Control:
         if self.hand_up and self.hand_last is not None and now - self.hand_last > to:
             self.hand_up = self.hand_detected = False
             self.log.event("service", name="hand", up=False)
+            self._lock_hand("hand_service_down")
             self.alert("error", None, "hand_service_down", "손 인식 서비스 꺼짐")
         if self.vision_up and self.vision_last is not None and now - self.vision_last > to:
             self.vision_up = False
@@ -686,6 +720,7 @@ class Control:
             if not self.hand_up or (msg["step"] != "reset" and not self.hand_detected):
                 return self._reject(None, "손 맞춤 (손 인식 서비스 연결과 손이 보여야 함)")
             self.outbox.append(("calib", None, self.out.make(m.HAND_CALIB, step=msg["step"])))
+            self._lock_hand("hand_calib")
             return
         if action == "delete_task":
             if any(c.run is not None and c.run.task_id == msg["task"] for c in self.cars.values()):
@@ -705,7 +740,9 @@ class Control:
         self.dirty = True
 
     def _ui_select_car(self, car: Car, msg: Dict[str, Any], now: float) -> None:
-        self.selected = car.n
+        if car.n != self.selected:
+            self.selected = car.n
+            self._lock_hand("select_car")
 
     def _ui_stop(self, car: Car, msg: Dict[str, Any], now: float) -> None:
         self.stop_car(car, "button")
@@ -784,6 +821,30 @@ class Control:
             return "출발 조건 기다림"
         return f"{r.idx + 1}/{len(r.plan)}"
 
+    def hand_ctl(self, car: Car) -> str:
+        """손이 이 작업차 AiHand를 움직이는지, 아니면 왜 아닌지 (설계 9.6, 화면 12장)."""
+        if car.n != self.selected:
+            return "not_selected"
+        if car.mode not in ("manual", "teach"):
+            return "mode"
+        if not car.link:
+            return "link"
+        if car.calib is None:
+            return "no_calib"
+        if not self.hand_up:
+            return "hand_service"
+        if not self.hand_calibrated:
+            return "hand_uncalibrated"
+        if not self.hand_detected:
+            return "hand_lost"
+        if car.pi_state != "arrived" or car.pending_goto is not None:
+            return "moving"
+        if self.gate.locked:
+            return "locked"
+        if not self.gate.all_attached():
+            return "catching"
+        return "following"
+
     def ui_state(self) -> Dict[str, Any]:
         cars = {}
         for n, c in self.cars.items():
@@ -796,11 +857,16 @@ class Control:
                 "result_pending": c.result_pending, "result_cycle": c.result_cycle,
                 "video_url": c.video_url, "allowed": self.allowed(c),
                 "stations": self.station_list[n],
+                "hand_ctl": self.hand_ctl(c),
+                "aihand_fingers": fingers_r(c.last_angles, c.calib),
+                "hand_attached": list(self.gate.attached) if n == self.selected else [False] * 5,
             }
         fields = {
             "selected_car": self.selected, "cars": cars, "bench": self.bench,
             "bench_vial": self.bench_view.value, "slots": self.slots(), "cock_led": self.cock_led,
-            "hand": {"service": self.hand_up, "detected": self.hand_detected, "calibrated": self.hand_calibrated},
+            "hand": {"service": self.hand_up, "detected": self.hand_detected, "calibrated": self.hand_calibrated,
+                     "fingers": [round(r, 2) for r in self.hand_fingers]
+                     if self.hand_detected and self.hand_fingers is not None else None},
             "vision": {"service": self.vision_up},
             "map_video_url": self.map_video_url, "hand_video_url": self.hand_video_url,
             "tasks": self.store.list(),

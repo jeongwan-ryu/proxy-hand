@@ -236,8 +236,12 @@ def test_hand_pose_goes_to_pi_udp(rig):
         rig.cmd(ws, "select_car", car=1)
         rig.cmd(ws, "set_mode", car=1, mode="manual")
         assert recv_until(ws, lambda x: x["topic"] == m.UI_STATE and x["cars"]["1"]["mode"] == "manual")
-        for i in range(5):                            # 손 인식 → 관제 → 파이
-            rig.send_hand_pose([0.2 * i] * 5, 0.0)
+        for _ in range(10):                           # 손을 펴서 0.3초 넘게 유지 → 시작 (설계 9.6, 보내지 않음)
+            rig.send_hand_pose([0.0] * 5, 0.0)
+            time.sleep(0.05)
+        assert recv_until(ws, lambda x: x["topic"] == m.UI_STATE and x["cars"]["1"]["hand_ctl"] == "catching")
+        for i in range(5):                            # 손 인식 → 관제 → 파이 (AiHand 모양을 모르니 주먹부터)
+            rig.send_hand_pose([1.0 - 0.2 * i] * 5, 10.0)
             time.sleep(0.05)
         assert wait_for(lambda: rig.pi.hands)
         h = rig.pi.hands[-1]

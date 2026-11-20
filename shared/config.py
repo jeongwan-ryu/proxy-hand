@@ -214,6 +214,7 @@ class MapConfig:
         self.markers = raw["markers"]
         self.vision = raw["vision"]
         self.drive_pose = raw["drive_pose"]
+        self.hand_follow = raw["hand_follow"]
         self.auto = raw["auto"]
 
     def is_station(self, station_id: str) -> bool:
@@ -318,6 +319,12 @@ def load_map(path: pathlib.Path = MAP_YAML) -> MapConfig:
     dp = c.obj(c.get(d, "drive_pose", ""), "drive_pose")
     c.boolean(dp, "enabled", "drive_pose")
     c.number(dp, "settle_s", "drive_pose", lo=0)
+
+    hf = c.obj(c.get(d, "hand_follow", ""), "hand_follow")
+    c.number(hf, "open_r", "hand_follow", positive=True, hi=1.0)
+    c.number(hf, "open_hold_s", "hand_follow", lo=0)
+    c.number(hf, "catch_tol", "hand_follow", lo=0, hi=1.0)
+    c.number(hf, "lost_lock_s", "hand_follow", lo=0)
 
     au = c.obj(c.get(d, "auto", ""), "auto")
     for key in ("goto_timeout_s", "cock_hold_s", "condition_check_s"):

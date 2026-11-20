@@ -121,8 +121,11 @@ def test_internal_fields_match_doc(heading, topic):
 def test_ui_state_fields_match_doc():
     text = section("### 6.1")
     top, cars, alert = text.split("`cars` 안의 값")[0], *text.split("`cars` 안의 값")[1].split("**`ui/alert`**")
+    cars, hand_ctl = cars.split("`hand_ctl` 값")
     top_doc = {first_code(r[0]) for r in table_rows(top) if first_code(r[0])}
     cars_doc = {first_code(r[0]) for r in table_rows(cars) if first_code(r[0])}
+    hand_ctl_doc = [first_code(r[0]) for r in table_rows(hand_ctl) if first_code(r[0])]
+    assert hand_ctl_doc == list(m.HAND_CTL_STATES), f"hand_ctl 값 (순서까지): 문서 {hand_ctl_doc}, 코드 {list(m.HAND_CTL_STATES)}"
     alert_doc = {first_code(r[0]) for r in table_rows(alert) if first_code(r[0])}
     assert top_doc == set(m.FIXED_FIELDS[m.UI_STATE][0]), diff_msg(top_doc, set(m.FIXED_FIELDS[m.UI_STATE][0]))
     assert cars_doc == set(m.CAR_STATE_FIELDS), diff_msg(cars_doc, set(m.CAR_STATE_FIELDS))

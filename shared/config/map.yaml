@@ -31,6 +31,11 @@ vision:                     # 판단 기준값 (잠정)
 drive_pose:                 # 주행 자세 (시스템 설계 9.5)
   enabled: true             # false면 goto 전에 손목을 돌리지 않음
   settle_s: 0.3             # 주행 자세를 보낸 뒤 goto까지 기다리는 시간
+hand_follow:                # 손 따라 하기 시작과 이어 붙이기 (시스템 설계 9.6, 잠정)
+  open_r: 0.2               # 손가락 5개가 모두 이 값 이하면 "편 손" (0 = 편, 1 = 쥔)
+  open_hold_s: 0.3          # 편 손을 이만큼 유지하면 시작 (이 편 손은 AiHand에 보내지 않음)
+  catch_tol: 0.1            # 조종자 손가락이 (AiHand 손가락 쥔 정도 − 이 값) 이상이 되면 그 손가락이 붙음
+  lost_lock_s: 0.5          # 손이 이만큼 넘게 안 보였다 다시 보이면 잠김 (이보다 짧으면 이어서 따라 함)
 auto:
   goto_timeout_s: 30        # 잠정
   cock_hold_s: 1.0          # 콕을 연 채로 기다리는 시간 (가르칠 때 참고, 잠정)

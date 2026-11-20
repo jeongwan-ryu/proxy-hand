@@ -182,12 +182,27 @@ class H:
     def allowed(self, n):
         return self.c.allowed(self.c.cars[n])
 
-    def manual(self, n=1) -> None:
-        """연결 + 대기 정거장 arrived + 조종 모드 + 조종 대상."""
-        self.ready(n)
+    def manual(self, n=1, start=True) -> None:
+        """시작 절차(파이 idle → [위치 지정] → 처음 자세: 손가락 폄) + 조종 모드 + 조종 대상 (+ 손을 펴서 시작)."""
+        self.link(n)
+        self.status(n, "idle")
+        self.cmd("set_station", car=n, station=self.mp.wait_station(n))
+        self.arrived(n, self.mp.wait_station(n))
+        if self.c.cars[n].calib is not None:
+            assert self.c.cars[n].last_angles is not None   # 관제가 AiHand 모양을 앎
         self.cmd("select_car", car=n)
         self.cmd("set_mode", car=n, mode="manual")
         assert self.mode(n) == "manual"
+        if start:
+            self.start_hand()
+
+    def start_hand(self, wrist=0.0) -> None:
+        """시작 신호: 손을 쫙 펴서 open_hold_s 동안 유지 (설계 9.6). 이 편 손은 AiHand에 보내지 않음."""
+        hold = self.mp.hand_follow["open_hold_s"]
+        self.hand((0, 0, 0, 0, 0), wrist)
+        self.now = round(self.now + hold, 6)
+        self.hand((0, 0, 0, 0, 0), wrist)
+        assert not self.c.gate.locked
 
 
 @pytest.fixture
@@ -488,10 +503,10 @@ class TestHand:
     def test_hand_to_servo_angles(self, h):
         h.manual(1)
         h.clear()
-        h.hand((0, 0, 0, 0, 0), 0.0)
+        h.hand((0, 0, 0, 0, 0), 30.0)
         h.now += 0.05
         h.hand((1, 1, 1, 1, 1), 90.0)
-        assert h.hands(1) == [OPEN + [90], FIST + [175]]
+        assert h.hands(1) == [OPEN + [120], FIST + [175]]
 
     def test_ms_is_interval(self, h):
         h.manual(1)
@@ -528,7 +543,12 @@ class TestHand:
 
     def test_no_aihand_calibration_blocks_hand(self, tmp_path):
         h = H(tmp_path, calibs={1: None, 2: copy.deepcopy(CALIB)})
-        h.manual(1)
+        h.manual(1, start=False)
+        # 보정 파일이 없으면 시작 신호도 보지 않음
+        h.hand((0, 0, 0, 0, 0))
+        h.now += 1.0
+        h.hand((0, 0, 0, 0, 0))
+        assert h.c.gate.locked and h.c.ui_state()["cars"]["1"]["hand_ctl"] == "no_calib"
         h.clear()
         h.hand((0.5, 0.5, 0.5, 0.5, 0.5), 10.0)
         assert h.hands() == []
@@ -558,6 +578,189 @@ class TestHand:
         h.clear()
         h.cmd("hand_calib", step="open")
         assert [msg["step"] for kind, _, msg in h.outs if kind == "calib"] == ["open"]
+
+
+# ============================================================== 9.6 손 따라 하기 시작·이어 붙이기
+HALF = [0.5] * 5
+
+
+class TestHandStart:
+    def test_locked_until_open_hand_held(self, h):
+        h.manual(1, start=False)
+        h.clear()
+        h.hand((0.5, 0.5, 0.5, 0.5, 0.5), 10.0)       # 잠김: 아무 손 모양도 안 보냄
+        h.hand((0, 0, 0, 0, 0))
+        h.now += 0.2
+        h.hand((0, 0, 0, 0, 0))                       # 0.3초가 안 됨
+        assert h.c.gate.locked
+        h.now += 0.1
+        h.hand((0, 0, 0, 0, 0))                       # 0.3초 유지 → 시작
+        assert not h.c.gate.locked
+        assert h.hands() == []                        # 시작 신호의 편 손은 보내지 않음
+        assert h.log.of("hand_start")
+        h.hand((0, 0, 0, 0, 0), 20.0)
+        assert h.hands(1) == [OPEN + [110]]           # 그 뒤 동작부터 따라 함
+
+    def test_open_must_be_continuous(self, h):
+        h.manual(1, start=False)
+        h.hand((0, 0, 0, 0, 0))
+        h.now += 0.2
+        h.hand((0, 0.5, 0, 0, 0))                     # 중간에 손가락 하나를 굽힘 → 처음부터
+        h.now += 0.2
+        h.hand((0, 0, 0, 0, 0))
+        assert h.c.gate.locked
+        h.now += 0.3
+        h.hand((0, 0, 0, 0, 0))
+        assert not h.c.gate.locked
+
+    def _holding(self, h):
+        """AiHand가 주먹(바이알을 쥔 것)인 채로 잠김 → 손을 펴서 시작."""
+        h.manual(1)
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        assert h.c.cars[1].last_angles[:5] == FIST
+        h.cmd("set_mode", car=1, mode="teach")        # 모드가 바뀌면 잠김
+        assert h.c.gate.locked
+        h.start_hand()
+        h.clear()
+
+    def test_holding_hand_does_not_open_after_start(self, h):
+        self._holding(h)
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "catching"
+        h.hand((0.5, 0.5, 0.5, 0.5, 0.5), 30.0)       # 쥐러 가는 중: 손가락은 그대로, 손목만
+        assert h.hands(1) == [FIST + [120]]
+        h.hand((1, 1, 0.5, 0.5, 0.5), 30.0)           # 엄지·검지만 AiHand에 닿음
+        assert h.c.gate.attached == [True, True, False, False, False]
+        h.hand((0.8, 0.8, 0.5, 0.5, 0.5), 30.0)       # 붙은 손가락은 이제 따라 함, 나머지는 그대로
+        last = h.hands(1)[-1]
+        assert last[2:5] == FIST[2:5] and last[0] != FIST[0] and last[1] != FIST[1]
+        h.hand((1, 1, 1, 1, 1), 30.0)
+        assert h.c.gate.all_attached()
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "following"
+        h.hand(HALF, 30.0)                            # 모두 붙은 뒤에는 펴는 것도 따라 함
+        assert h.hands(1)[-1][:5] == pose_fingers(HALF)
+
+    def test_unknown_aihand_is_treated_as_holding(self, h):
+        """관제를 다시 켜서 AiHand 모양을 모름 (설계 9.6): 주먹을 쥐어 5개 모두 붙기 전에는 아무것도 안 보냄."""
+        h.ready(1)
+        h.cmd("select_car", car=1)
+        h.cmd("set_mode", car=1, mode="manual")
+        assert h.c.cars[1].last_angles is None
+        h.start_hand()
+        h.clear()
+        h.hand((0, 0, 0, 0, 0), 30.0)                 # 편 손: 붙지 않음, 손목도 안 보냄
+        h.hand((1, 1, 1, 1, 0.5), 30.0)               # 4개만 붙음: 아직 안 보냄
+        assert h.hands() == []
+        assert h.c.ui_state()["cars"]["1"]["aihand_fingers"] is None
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "catching"
+        h.hand((1, 1, 1, 1, 1), 30.0)
+        assert h.hands(1) == [FIST + [120]]
+        h.hand((0, 0, 0, 0, 0), 30.0)                 # 그 뒤로는 펴는 것도 따라 함
+        assert h.hands(1)[-1] == OPEN + [120]
+
+    def test_catch_tolerance(self, h):
+        self._holding(h)
+        tol = h.mp.hand_follow["catch_tol"]
+        h.hand([1 - tol - 0.05] * 5, 0.0)
+        assert not any(h.c.gate.attached)
+        h.hand([1 - tol + 0.01] * 5, 0.0)
+        assert h.c.gate.all_attached()
+
+    def test_short_loss_continues_long_loss_locks(self, h):
+        h.manual(1)
+        lock_s = h.mp.hand_follow["lost_lock_s"]
+        h.hand(detected=False)
+        h.now += lock_s - 0.1
+        h.hand()                                      # 잠깐 놓침: 이어서 따라 함 (SR-09)
+        assert not h.c.gate.locked
+        h.hand(detected=False)
+        h.now += lock_s + 0.1
+        h.hand(detected=False)
+        assert not h.c.gate.locked                    # 안 보이는 동안에는 그대로
+        h.hand()
+        assert h.c.gate.locked                        # 길게 놓친 뒤 다시 보임 → 잠김
+
+    @pytest.mark.parametrize("how", ["mode", "select_car", "arrived", "hand_calib", "hand_service_down"])
+    def test_lock_triggers(self, h, how):
+        h.fake_pi.add(1)
+        h.ready(2)
+        h.manual(1)
+        if how == "mode":
+            h.cmd("set_mode", car=1, mode="teach")
+        elif how == "select_car":
+            h.cmd("select_car", car=2)
+            assert h.c.gate.locked
+            h.manual(1)                                # 되돌아와도 다시 펴야 함
+            h.cmd("select_car", car=2)
+            h.cmd("select_car", car=1)
+        elif how == "arrived":
+            h.cmd("goto", car=1, station="storage_1")
+            h.run(1.0)
+            assert h.c.cars[1].station == "storage_1"
+        elif how == "hand_calib":
+            h.hand()
+            h.cmd("hand_calib", step="open")
+        elif how == "hand_service_down":
+            h.run(1.2)
+        assert h.c.gate.locked
+        assert h.log.of("hand_lock")
+
+    def test_other_car_mode_change_does_not_lock(self, h):
+        h.ready(2)
+        h.manual(1)
+        h.cmd("set_mode", car=2, mode="manual")
+        assert not h.c.gate.locked
+
+    def test_ui_state_hand_fields(self, h):
+        h.ready(2)
+        h.manual(1, start=False)
+        h.hand(HALF)
+        st = h.c.ui_state()
+        assert st["cars"]["1"]["hand_ctl"] == "locked"
+        assert st["cars"]["2"]["hand_ctl"] == "not_selected"
+        assert st["cars"]["2"]["hand_attached"] == [False] * 5
+        h.start_hand()
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        st = h.c.ui_state()
+        assert st["cars"]["1"]["hand_ctl"] == "following"
+        assert st["cars"]["1"]["aihand_fingers"] == [pytest.approx(r, abs=0.05) for r in (0.97, 0.96, 0.96, 0.96, 0.96)]
+        assert st["hand"]["fingers"] == [1, 1, 1, 1, 1]
+        h.hand(detected=False)
+        st = h.c.ui_state()
+        assert st["hand"]["fingers"] is None and st["cars"]["1"]["hand_ctl"] == "hand_lost"
+        h.hand()
+        h.status(1, "driving", None, "storage_1")
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "moving"
+
+    @pytest.mark.parametrize("why", ["mode", "link", "hand_service", "hand_uncalibrated"])
+    def test_ui_state_reasons(self, h, why):
+        if why == "mode":
+            h.ready(1)
+            h.hand()
+        elif why == "link":
+            h.manual(1)
+            h.link(1, False)
+            h.cmd("set_mode", car=1, mode="manual")
+        elif why == "hand_service":
+            h.ready(1)
+            h.cmd("set_mode", car=1, mode="manual")
+        else:
+            h.ready(1)
+            h.cmd("set_mode", car=1, mode="manual")
+            h.hand(calibrated=False)
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == why
+
+
+def pose_fingers(r):
+    from laptop.control_service import pose
+    return pose.hand_to_servos(r, 0.0, CALIB)[:5]
+
+
+def test_fingers_r_round_trip():
+    from laptop.control_service.handgate import fingers_r
+    assert fingers_r(None, CALIB) is None
+    assert fingers_r(OPEN + [90], CALIB) == [pytest.approx(x, abs=0.05) for x in (0.03, 0.04, 0.04, 0.04, 0.04)]
+    raw = [s["closed"] for s in CALIB["servos"][:5]] + [90]
+    assert fingers_r(raw, CALIB) == [1.0] * 5
 
 
 # ============================================================== 9.5 주행 자세
@@ -599,12 +802,14 @@ class TestTeach:
         h.cmd("goto", car=1, station="storage_2")
         h.run(1.0)
         assert h.c.cars[1].station == "storage_2"
+        h.start_hand()                                # 도착하면 잠김 → 손을 펴서 시작 (기록 안 됨)
         h.hand((0, 0, 0, 0, 0), -30.0)                # 주행 자세(손목 90)와 달라야 보냄
         h.now += 0.1
         h.hand((1, 1, 1, 1, 1), -30.0)
         h.cmd("goto", car=1, station="bench_1")
         h.run(1.0)
-        h.hand((0, 0, 0, 0, 0), 0.0)
+        h.start_hand()                                # AiHand는 쥔 채: 편 손은 안 보냄
+        h.hand((1, 1, 1, 1, 1), -30.0)                # 주먹을 쥐면 손가락이 붙고 손목이 따라 감
         assert h.c.ui_state()["cars"]["1"]["recording_steps"] == 4
         h.cmd("record_end", car=1, name="분주 1회")
         assert h.mode(1) == "manual"
@@ -864,7 +1069,10 @@ class TestErrors:
         h.cmd("set_mode", car=1, mode="manual")
         assert h.tcp(1, m.RESUME)
         h.status(1, "arrived", "wait_1", None)        # 파이: resume → arrived
-        h.hand((0.5, 0.5, 0.5, 0.5, 0.5), 10.0)
+        h.start_hand()
+        h.hand((0.5, 0.5, 0.5, 0.5, 0.5), 10.0)       # AiHand 모양을 모름 → 쥐고 있다고 봄 → 안 보냄
+        assert not h.hands(1)
+        h.hand((1, 1, 1, 1, 1), 10.0)                 # 주먹을 쥐면 이어짐
         assert h.hands(1)
 
     def test_link_up_sends_time_sync_first(self, h):
