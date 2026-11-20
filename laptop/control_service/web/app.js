@@ -46,6 +46,19 @@ window.addEventListener("keydown", (e) => {
     if (!e.repeat) stopAll();
   }
 }, true);
+// Enter: [놓기 허용] (설계 9.7). 이름 입력 칸에서 누른 Enter는 그 칸이 처리(이름 저장)
+window.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || e.repeat) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
+  if (!state) return;
+  const car = state.selected_car;
+  const cs = state.cars[String(car)];
+  if (cs && cs.allowed.includes("allow_release")) {
+    e.preventDefault();
+    send("allow_release", { car });
+  }
+});
 // 스페이스바를 뗄 때 포커스된 버튼이 눌리지 않게 막음
 window.addEventListener("keyup", (e) => {
   if (e.code === "Space" || e.key === " ") { e.preventDefault(); e.stopPropagation(); }

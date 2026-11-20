@@ -614,12 +614,14 @@ class TestHandStart:
         assert not h.c.gate.locked
 
     def _holding(self, h):
-        """AiHand가 주먹(바이알을 쥔 것)인 채로 잠김 → 손을 펴서 시작."""
+        """AiHand가 주먹(바이알을 쥔 것)인 채로 작업대(놓는 곳)에 도착해 잠김 → 손을 펴서 시작."""
+        h.fake_pi.add(1)
         h.manual(1)
         h.hand((1, 1, 1, 1, 1), 0.0)
         assert h.c.cars[1].last_angles[:5] == FIST
-        h.cmd("set_mode", car=1, mode="teach")        # 모드가 바뀌면 잠김
-        assert h.c.gate.locked
+        h.cmd("goto", car=1, station="bench_1")
+        h.run(1.0)
+        assert h.c.cars[1].station == "bench_1" and h.c.gate.locked     # 도착하면 잠김
         h.start_hand()
         h.clear()
 
@@ -654,8 +656,9 @@ class TestHandStart:
         assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "catching"
         h.hand((1, 1, 1, 1, 1), 30.0)
         assert h.hands(1) == [FIST + [120]]
-        h.hand((0, 0, 0, 0, 0), 30.0)                 # 그 뒤로는 펴는 것도 따라 함
-        assert h.hands(1)[-1] == OPEN + [120]
+        h.hand((0, 0, 0, 0, 0), 30.0)                 # 대기 1은 놓는 곳이 아님 → 놓기 경고로 멈춤 (9.7)
+        assert h.hands(1)[-1] == FIST + [120]
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "release_hold"
 
     def test_catch_tolerance(self, h):
         self._holding(h)
@@ -748,6 +751,83 @@ class TestHandStart:
             h.cmd("set_mode", car=1, mode="manual")
             h.hand(calibrated=False)
         assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == why
+
+
+# ============================================================== 9.7 놓기 경고
+class TestRelease:
+    def _grip_at_wait(self, h):
+        """대기 1(놓는 곳 아님)에서 AiHand가 주먹을 쥠."""
+        h.manual(1)
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        assert h.c.cars[1].last_angles[:5] == FIST
+        h.clear()
+
+    def test_open_at_non_release_station_holds_fingers(self, h):
+        self._grip_at_wait(h)
+        h.hand((0.3, 0.3, 0.3, 0.3, 0.3), 20.0)       # 펴려 함 → 손가락은 쥔 채, 손목만 따라 감
+        assert h.hands(1) == [FIST + [110]]
+        st = h.c.ui_state()["cars"]["1"]
+        assert st["hand_ctl"] == "release_hold" and "allow_release" in st["allowed"]
+        assert h.log.of("release_hold")[0]["station"] == "wait_1"
+        h.hand((0, 0, 0, 0, 0), 20.0)                 # 더 펴도 그대로
+        assert h.c.cars[1].last_angles[:5] == FIST
+        assert not h.alerts()                         # 알림 칸에는 넣지 않음 (손 상태 줄에만)
+
+    def test_close_again_clears_warning(self, h):
+        self._grip_at_wait(h)
+        h.hand(HALF, 0.0)
+        assert h.c.gate.release_hold
+        h.hand((0.9, 0.9, 0.9, 0.9, 0.9), 0.0)        # 실수였음 → 다시 쥠
+        assert not h.c.gate.release_hold
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "following"
+        assert h.log.of("release_clear")
+        assert h.hands(1)[-1][:5] == pose_fingers([0.9] * 5)
+
+    def test_allow_release_once(self, h):
+        self._grip_at_wait(h)
+        h.hand(HALF, 0.0)
+        h.cmd("allow_release", car=1)
+        assert h.log.of("release_allow")
+        h.hand((0, 0, 0, 0, 0), 0.0)                  # 이제 펴는 것도 따라 함 → 놓음
+        assert h.c.cars[1].last_angles[:5] == OPEN
+        assert h.c.ui_state()["cars"]["1"]["hand_ctl"] == "following"
+        h.hand((1, 1, 1, 1, 1), 0.0)                  # 다시 쥠 → 허용이 풀림
+        assert h.log.of("release_reset")
+        h.hand(HALF, 0.0)                             # 다음에 펴면 또 경고
+        assert h.c.gate.release_hold
+        assert h.c.cars[1].last_angles[:5] == FIST
+
+    @pytest.mark.parametrize("station", ["storage_1", "bench_1"])
+    def test_no_warning_at_release_station(self, h, station):
+        h.fake_pi.add(1)
+        h.manual(1)
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        h.cmd("goto", car=1, station=station)
+        h.run(1.0)
+        h.start_hand()                                # 붙기 전 편 손 (따라 하지 않음)
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        h.hand((0, 0, 0, 0, 0), 0.0)
+        assert not h.c.gate.release_hold
+        assert h.c.cars[1].last_angles[:5] == OPEN
+
+    def test_allow_release_only_when_held(self, h):
+        h.manual(1)
+        h.clear()
+        h.cmd("allow_release", car=1)
+        assert h.alerts("cmd_rejected")
+        assert not h.c.gate.release_allowed
+
+    def test_lock_clears_warning_and_permission(self, h):
+        self._grip_at_wait(h)
+        h.hand(HALF, 0.0)
+        h.cmd("allow_release", car=1)
+        h.cmd("set_mode", car=1, mode="teach")        # 잠김 → 허용도 없어짐
+        assert h.c.gate.locked and not h.c.gate.release_allowed and not h.c.gate.release_hold
+
+    def test_release_flags_in_map(self, h):
+        ok = {sid for sid in h.mp.stations if h.mp.release_ok(sid)}
+        assert ok == {"storage_1", "storage_2", "storage_3", "bench_1", "bench_2", "meter"}
+        assert not h.mp.release_ok(None)
 
 
 def pose_fingers(r):

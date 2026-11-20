@@ -99,7 +99,7 @@ SLOT_KEYS = ("1", "2", "3")
 # 6.1 cars.n.hand_ctl: 손이 그 작업차 AiHand를 움직이는지, 아니면 왜 아닌지 (시스템 설계 9.6).
 # 관제가 앞에서부터 먼저 맞는 것을 고르는 순서
 HAND_CTL_STATES = ("not_selected", "mode", "link", "no_calib", "hand_service", "hand_uncalibrated",
-                   "hand_lost", "moving", "locked", "catching", "following")
+                   "hand_lost", "moving", "locked", "release_hold", "catching", "following")
 
 # 8장 오류·알림 코드
 PI_ERROR_CODES = ("line_lost", "serial_fail", "line_missed", "link_lost")
@@ -326,6 +326,7 @@ UI_ACTIONS: Dict[str, Dict[str, Check]] = {
     "mark_result": {"car": c_car, "cycle": c_int(1), "result": c_enum(RESULTS)},
     "delete_task": {"task": c_str},
     "hand_calib": {"step": c_enum(CALIB_STEPS)},
+    "allow_release": {"car": c_car},
 }
 
 

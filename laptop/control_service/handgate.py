@@ -7,6 +7,9 @@
 
 AiHand가 바이알을 쥐고 있을 때 시작 신호(편 손) 직후의 "반쯤 쥔 손"을 따라 하면 바이알이 떨어지므로
 이어 붙이기가 필요하다. 다시 잠그는 때는 관제(core.py)가 정한다.
+
+놓기 경고 (시스템 설계 9.7, SR-45): AiHand가 쥐고 있고(손가락 평균 ≥ hold_r) 놓는 곳이 아닌데 손을 펴면
+손가락을 멈추고(release_hold) [놓기 허용]을 기다림. 허용은 AiHand가 한 번 펴졌다 다시 쥐면 풀림.
 """
 
 from __future__ import annotations
@@ -34,16 +37,21 @@ class HandGate:
         self.open_r = cfg["open_r"]
         self.open_hold_s = cfg["open_hold_s"]
         self.catch_tol = cfg["catch_tol"]
+        self.hold_r = cfg["hold_r"]
+        self.release_hold = False       # 놓기 막음: 손가락 멈춤, [놓기 허용] 기다림
+        self.release_allowed = False    # [놓기 허용]을 누름: 이번 한 번 펴는 것을 따라 함
+        self.release_opened = False     # 허용 뒤 AiHand가 실제로 펴짐 (다시 쥐면 허용을 풀기 위해)
         self.locked = True
         self.open_since: Optional[float] = None
         self.attached = [False] * N_FINGERS
 
     def lock(self) -> bool:
         """잠금. 바뀌었으면 True."""
-        changed = not self.locked or any(self.attached)
+        changed = not self.locked or any(self.attached) or self.release_hold
         self.locked = True
         self.open_since = None
         self.attached = [False] * N_FINGERS
+        self.release_hold = self.release_allowed = self.release_opened = False
         return changed
 
     def watch_start(self, fingers: Sequence[float], now: float) -> bool:
@@ -82,6 +90,40 @@ class HandGate:
 
     def all_attached(self) -> bool:
         return all(self.attached)
+
+    def holding(self, r: Optional[Sequence[float]]) -> bool:
+        return r is not None and sum(r) / len(r) >= self.hold_r
+
+    def guard_release(self, angles: List[int], last: Optional[Sequence[int]],
+                      new_r: Sequence[float], last_r: Optional[Sequence[float]], release_ok: bool) -> str:
+        """놓기 경고 (9.7). angles를 고칠 수 있음(손가락을 last로). 돌려주는 값:
+        "" 변화 없음 / "hold" 막기 시작 / "clear" 막기 풀림(다시 쥠) / "reset" 허용이 풀림(다시 쥠)."""
+        event = ""
+        if self.release_allowed:
+            if not self.holding(new_r):
+                self.release_opened = True
+            elif self.release_opened:
+                self.release_allowed = self.release_opened = False
+                event = "reset"
+            return event
+        if release_ok or not self.holding(last_r) or self.holding(new_r) or last is None:
+            if self.release_hold and (release_ok or self.holding(new_r)):
+                self.release_hold = False
+                return "clear"
+            if not self.release_hold:
+                return ""
+        # 쥐고 있는데 놓는 곳이 아닌 곳에서 펴려 함 → 손가락은 마지막 각도 그대로, 손목은 따라 감
+        for i in range(N_FINGERS):
+            angles[i] = last[i]  # type: ignore[index]
+        if not self.release_hold:
+            self.release_hold = True
+            return "hold"
+        return ""
+
+    def allow_release(self) -> None:
+        self.release_hold = False
+        self.release_allowed = True
+        self.release_opened = False
 
     def merge(self, wanted: Sequence[int], last: Optional[Sequence[int]]) -> List[int]:
         """보낼 각도: 붙은 손가락과 손목은 손을 따르고, 안 붙은 손가락은 마지막 AiHand 각도 그대로."""

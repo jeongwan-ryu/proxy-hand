@@ -8,7 +8,7 @@
     core.ui_state()
 
 now는 time.monotonic() 기준 초. 규칙은 시스템 설계 5.2(보류), 6장(모드·작업대), 7장(혼자 하기),
-8장(가르치기·재생), 9.3·9.5(자세), 9.6(손 따라 하기 시작·이어 붙이기), 11장(오류), 12장(버튼 조건)을 따른다.
+8장(가르치기·재생), 9.3·9.5(자세), 9.6(손 따라 하기 시작·이어 붙이기), 9.7(놓기 경고), 11장(오류), 12장(버튼 조건)을 따른다.
 """
 
 from __future__ import annotations
@@ -297,6 +297,12 @@ class Control:
             return      # AiHand 모양을 모름: 손가락 5개가 모두 붙기(주먹) 전에는 아무것도 보내지 않음 (설계 9.6)
         wanted = pose.hand_to_servos(self.hand_fingers, self.hand_wrist, car.calib)  # type: ignore[arg-type]
         angles = self.gate.merge(wanted, car.last_angles)
+        # 놓기 경고 (설계 9.7): 쥐고 있는데 놓는 곳이 아닌 곳에서 손을 펴면 손가락을 멈춤
+        ev = self.gate.guard_release(angles, car.last_angles, fingers_r(angles, car.calib),  # type: ignore[arg-type]
+                                     fingers_r(car.last_angles, car.calib), self.mp.release_ok(car.station))
+        if ev:
+            self.log.event("release_" + ev, car=car.n, station=car.station)
+            self.dirty = True
         if not pose.changed_enough(angles, car.last_angles):
             return
         ms = LIVE_MS_DEFAULT if prev_t is None else max(10, min(200, int(round((now - prev_t) * 1000))))
@@ -705,6 +711,8 @@ class Control:
             a.append("delete_task")
         if self.hand_up and self.hand_detected:
             a.append("hand_calib")
+        if car.n == self.selected and self.gate.release_hold:
+            a.append("allow_release")
         return a
 
     # ------------------------------------------------------------------ 화면 명령 (ui/cmd)
@@ -805,6 +813,10 @@ class Control:
         car.auto_finished_at = None
         self._set_mode(car, "auto", "start")
 
+    def _ui_allow_release(self, car: Car, msg: Dict[str, Any], now: float) -> None:
+        self.gate.allow_release()
+        self.log.event("release_allow", car=car.n, station=car.station)
+
     def _ui_mark_result(self, car: Car, msg: Dict[str, Any], now: float) -> None:
         if msg["cycle"] != car.result_cycle:
             return self._reject(car.n, f"결과를 표시할 반복이 아님 ({msg['cycle']})")
@@ -841,6 +853,8 @@ class Control:
             return "moving"
         if self.gate.locked:
             return "locked"
+        if self.gate.release_hold:
+            return "release_hold"
         if not self.gate.all_attached():
             return "catching"
         return "following"

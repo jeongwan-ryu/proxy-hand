@@ -229,6 +229,10 @@ class MapConfig:
         loop = self.cars[str(car)]["loop"]
         return [sid for sid, s in self.stations.items() if s["loop"] == loop]
 
+    def release_ok(self, station_id: Optional[str]) -> bool:
+        """AiHand가 쥔 것을 이 정거장에서 놓아도 되는지 (9.2 release). 정거장을 모르면 False."""
+        return station_id is not None and station_id in self.stations and bool(self.stations[station_id]["release"])
+
     def wait_station(self, car: int) -> str:
         return self.cars[str(car)]["wait_station"]
 
@@ -276,6 +280,7 @@ def load_map(path: pathlib.Path = MAP_YAML) -> MapConfig:
         c.number(s, "segment_s", where, lo=0)
         if "slot" in s:
             c.choice(s, "slot", (1, 2, 3), where)
+        c.boolean(s, "release", where)
     for name, count in loops.items():
         used = sum(1 for (lp, _) in seen_lines if lp == name)
         if used != count:
@@ -325,6 +330,7 @@ def load_map(path: pathlib.Path = MAP_YAML) -> MapConfig:
     c.number(hf, "open_hold_s", "hand_follow", lo=0)
     c.number(hf, "catch_tol", "hand_follow", lo=0, hi=1.0)
     c.number(hf, "lost_lock_s", "hand_follow", lo=0)
+    c.number(hf, "hold_r", "hand_follow", positive=True, hi=1.0)
 
     au = c.obj(c.get(d, "auto", ""), "auto")
     for key in ("goto_timeout_s", "cock_hold_s", "condition_check_s"):
