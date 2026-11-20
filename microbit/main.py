@@ -10,7 +10,10 @@
 #    P                     : 연결 확인(ping)     -> "OK PONG"
 #    S 서보번호 각도 시간ms : 서보 이동           -> "OK servo=1 angle=120 ms=500"
 #        예) S 1 120 500
-#    D                     : 초음파 거리         -> "OK cm=12.3 mm=123"
+#    M 각도1 ~ 각도6 시간ms : 서보 6개를 패킷 하나로 한 번에 이동 -> "OK"
+#        예) M 5 145 145 145 145 90 33   (ProxyHand 추가. 인터페이스 정의 7장)
+#        각도 0~180, 시간 0~1000이 아니면 움직이지 않고 "ERR range"
+#    D                   : 초음파 거리         -> "OK cm=12.3 mm=123"
 #    L 빨강 초록 파랑(0~255) : 초음파 센서 LED 색  -> "OK led=255,0,0"
 #    I                     : I2C 장치 주소 검색   -> "OK i2c=0x77,..."
 #    C                     : 카메라 인식 결과     -> "OK func=5 n=1 objs=1,160,120,40,38"
@@ -56,6 +59,7 @@ SERVO_IDS = (1, 2, 3, 4, 5, 6)   # 이 손에서 쓰는 서보 번호
 DEFAULT_MS = 500       # 기본 이동 시간(ms)
 MIN_MS = 20            # 이동 시간 하한(너무 짧으면 서보에 충격)
 MAX_MS = 10000         # 이동 시간 상한
+M_MAX_MS = 1000        # M 명령 시간 상한 (인터페이스 정의 7장)
 MAX_LINE = 64          # 한 줄 최대 길이(쓰레기 데이터 방지)
 SONAR_ADDR = 0x77      # 초음파 센서 I2C 주소
 
@@ -189,6 +193,18 @@ def make_servo_packet(servo, angle, ms):
     ])
 
 
+def make_multi_packet(angles, ms):
+    """서보 여러 개를 패킷 하나로 (ProxyHand M 명령). 1개짜리와 같은 형식에서 서보 칸만 반복.
+    0x55 0x55 | 길이(3*개수+5) | 0x03(서보 명령) | 개수 | 시간 하위 | 시간 상위
+    | [서보번호 | 위치 하위 | 위치 상위] x 개수
+    """
+    pkt = [0x55, 0x55, 3 * len(angles) + 5, 0x03, len(angles), ms & 0xFF, (ms >> 8) & 0xFF]
+    for sid, angle in zip(SERVO_IDS, angles):
+        pos = angle_to_position(angle)
+        pkt += [sid, pos & 0xFF, (pos >> 8) & 0xFF]
+    return bytes(pkt)
+
+
 def send_to_board(packet):
     """UART를 확장보드 쪽(P12=TX, P8=RX)으로 잠깐 돌려서 패킷을 보내고 USB로 복귀.
     주의: 이 함수 안에서는 print()를 쓰면 안 된다(글자가 확장보드로 가버림)."""
@@ -244,6 +260,23 @@ def handle_line(line):
         angle, ms = move_servo(servo, angle, ms)
         return "OK servo={} angle={} ms={}".format(servo, angle, ms)
 
+    if cmd == "M":
+        # ProxyHand: 서보 6개 한 번에. 범위 밖이면 움직이지 않음 (S처럼 자르지 않음, 인터페이스 정의 7장)
+        if len(parts) != 8:
+            return "ERR usage: M a1 a2 a3 a4 a5 a6 ms"
+        try:
+            nums = [int(p) for p in parts[1:]]
+        except ValueError:
+            return "ERR not a number"
+        angles, ms = nums[:6], nums[6]
+        for a in angles:
+            if a < 0 or a > 180:
+                return "ERR range"
+        if ms < 0 or ms > M_MAX_MS:
+            return "ERR range"
+        send_to_board(make_multi_packet(angles, max(MIN_MS, ms)))
+        return "OK"
+
     if cmd == "D":
         try:
             mm = sonar_read_mm()
@@ -280,10 +313,9 @@ uart.init(baudrate=BAUD)
 display.show(Image.HEART)
 sleep(2000)   # StartbitV2도 초기화 후 2초 대기. 확장보드가 켜질 시간을 준다.
 
-# 시작 시 6개 서보를 90도(반쯤 쥔 기본 자세)로. 안전을 위해 한 번에 하나씩.
-for sid in SERVO_IDS:
-    move_servo(sid, 90, DEFAULT_MS)
-    sleep(DEFAULT_MS + 100)
+# ProxyHand: 켜질 때 서보를 움직이지 않는다. 시연 중 USB가 다시 연결되어 micro:bit가 다시 켜져도
+# 쥐고 있던 바이알을 놓치지 않게 하기 위함 (시스템 설계 9.5). 처음 자세는 관제가 [위치 지정] 뒤에 보낸다.
+# (기술조사 원본은 여기서 서보 6개를 90도로 하나씩 움직였음)
 
 display.show(Image.YES)
 reply("READY")
