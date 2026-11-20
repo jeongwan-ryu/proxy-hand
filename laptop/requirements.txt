@@ -1,4 +1,4 @@
-# 노트북 (Windows 11, Python 3.11 64비트) — 시스템 설계 3.6
+# 노트북 (Windows 11, Python 3.12 64비트) — 시스템 설계 3.6
 mediapipe
 opencv-contrib-python
 numpy

@@ -14,3 +14,6 @@ data/logs/*
 .idea/
 Thumbs.db
 .DS_Store
+
+# 조종자 손 맞춤 값 (사람마다 다름, 손 인식 서비스가 만듦)
+data/calibration/operator.json

@@ -11,7 +11,7 @@ AiHand + Raspbot 작업차 2대로 핫셀 원격 조종 · 가르치기 · 혼�
 
 ```
 docs/                      기준 문서 5개 + 그림 (images/)
-laptop/                    노트북 (Windows, Python 3.11)
+laptop/                    노트북 (Windows, Python 3.12)
   hand_service/            손 인식 서비스        — 이보연
   vision_service/          맵 비전 서비스        — 유정완
   control_service/         관제 서비스           — 이보연
