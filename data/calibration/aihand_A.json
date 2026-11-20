@@ -1,0 +1,45 @@
+{
+  "name": "aihand_A",
+  "measured": "2026-11-20T12:56:47",
+  "margin_deg": 5,
+  "servos": [
+    {
+      "id": 1,
+      "part": "thumb",
+      "open": 0,
+      "closed": 155
+    },
+    {
+      "id": 2,
+      "part": "index",
+      "open": 150,
+      "closed": 32
+    },
+    {
+      "id": 3,
+      "part": "middle",
+      "open": 150,
+      "closed": 31
+    },
+    {
+      "id": 4,
+      "part": "ring",
+      "open": 150,
+      "closed": 30
+    },
+    {
+      "id": 5,
+      "part": "pinky",
+      "open": 150,
+      "closed": 10
+    },
+    {
+      "id": 6,
+      "part": "wrist",
+      "min": 0,
+      "max": 180,
+      "center": 90
+    }
+  ],
+  "drive_wrist": 90
+}
