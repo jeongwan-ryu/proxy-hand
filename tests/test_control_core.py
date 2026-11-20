@@ -815,6 +815,18 @@ class TestErrors:
         h.cmd("set_mode", car=1, mode="manual")
         assert h.mode(1) == "manual" and not h.tcp(1, m.RESUME)
 
+    @pytest.mark.parametrize("code", ["line_lost", "line_missed", "serial_fail"])
+    def test_recovery_set_station_keeps_hand(self, h, code):
+        """오류 복구 때 [위치 지정]은 처음 자세(손가락 폄)를 보내지 않음 — 쥔 바이알을 놓치지 않게 (설계 9.5)."""
+        h.fake_pi.add(1)
+        h.manual(1)
+        h.hand((1, 1, 1, 1, 1), 0.0)                  # 바이알을 쥔 손
+        h.error(1, code)
+        h.clear()
+        h.cmd("set_station", car=1, station="bench_1")
+        assert h.c.cars[1].pi_state == "arrived"
+        assert h.hands(1) == []
+
     def test_pi_link_lost_report_is_only_logged(self, h):
         h.manual(1)
         h.clear()

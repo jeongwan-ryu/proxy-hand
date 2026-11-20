@@ -114,6 +114,7 @@ class Car:
         self.goto_target: Optional[str] = None
         self.goto_deadline: Optional[float] = None
         self.pending_set_station: Optional[str] = None
+        self.initial_pose_on_arrive = False      # [위치 지정] 때 파이가 idle이었으면 도착 뒤 처음 자세
         self.auto_finished_at: Optional[float] = None
 
 
@@ -460,7 +461,7 @@ class Control:
             car.goto_target = car.goto_deadline = None
         if car.pending_set_station == station:
             car.pending_set_station = None
-            if car.calib is not None:
+            if car.initial_pose_on_arrive and car.calib is not None:
                 self._hand(car, pose.initial_pose(car.calib), DRIVE_POSE_MS, "initial")
         r = car.run
         if r is not None and r.phase == "goto" and r.goto_target == station:
@@ -734,6 +735,9 @@ class Control:
         if msg["station"] not in self.car_stations[car.n]:
             return self._reject(car.n, f"작업차 {car.n} 고리에 없는 정거장: {msg['station']}")
         car.pending_set_station = msg["station"]
+        # 처음 자세(손가락 폄)는 켜진 뒤 처음 위치를 정할 때(파이 idle)만. 오류 복구 때는
+        # 바이알을 쥔 채일 수 있으므로 손을 그대로 둠 (설계 9.5)
+        car.initial_pose_on_arrive = car.pi_state == "idle"
         car.between = False
         self._tcp(car, m.SET_STATION, station=msg["station"])
 
