@@ -272,6 +272,7 @@ CAR_STATE_FIELDS: Dict[str, Check] = {          # ui/state 의 cars."1" 안
     "result_cycle": c_nullable(c_int(1)),
     "video_url": c_str,
     "allowed": c_list(c_str),
+    "stations": c_list(c_obj({"id": STATION, "name": c_str})),
 }
 
 TASK_ENTRY_FIELDS: Dict[str, Check] = {"id": c_str, "name": c_str, "car": c_car, "created": c_str}

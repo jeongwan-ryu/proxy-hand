@@ -472,6 +472,16 @@ class TestModes:
         assert "set_mode:idle" in s["cars"]["1"]["allowed"]
         assert s["cars"]["2"]["link"] is False
 
+    def test_ui_state_stations_per_car_in_line_order(self, h):
+        mp = config.load_map()
+        cars = h.c.ui_state()["cars"]
+        for n in (1, 2):
+            ids = [s["id"] for s in cars[str(n)]["stations"]]
+            assert set(ids) == set(mp.stations_of_car(n))
+            assert ids[0] == mp.wait_station(n)       # 대기 정거장(정지선 0)이 맨 앞
+            assert [mp.station(i)["line"] for i in ids] == sorted(mp.station(i)["line"] for i in ids)
+            assert all(s["name"] == mp.station(s["id"])["name"] for s in cars[str(n)]["stations"])
+
 
 # ============================================================== 6.1, 9.3 손 명령
 class TestHand:

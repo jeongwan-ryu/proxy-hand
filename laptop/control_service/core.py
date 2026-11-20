@@ -166,6 +166,10 @@ class Control:
 
         # 정거장 → 그 정거장을 쓰는 작업차, 칸 번호 → 정거장
         self.car_stations = {n: set(mp.stations_of_car(n)) for n in m.CAR_IDS}
+        # 화면의 정거장 버튼·[위치 지정] 목록 (정지선 순서)
+        self.station_list = {n: [{"id": sid, "name": mp.station(sid)["name"]}
+                                 for sid in sorted(mp.stations_of_car(n), key=lambda s: mp.station(s)["line"])]
+                             for n in m.CAR_IDS}
         self.slot_station = {str(s["slot"]): sid for sid, s in mp.stations.items() if "slot" in s}
         self.bench_stations = {sid for sid in mp.stations if sid.startswith("bench_")}
         self.cock_car = next((n for n in m.CAR_IDS if "cock" in self.car_stations[n]), 1)
@@ -791,6 +795,7 @@ class Control:
                 "recording_steps": len(c.recorder.steps) if c.recorder is not None else None,
                 "result_pending": c.result_pending, "result_cycle": c.result_cycle,
                 "video_url": c.video_url, "allowed": self.allowed(c),
+                "stations": self.station_list[n],
             }
         fields = {
             "selected_car": self.selected, "cars": cars, "bench": self.bench,
