@@ -562,6 +562,36 @@ class TestHand:
         assert h.alerts("hand_lost")
         assert h.mode(1) == "manual"
 
+    @pytest.mark.parametrize("case", ["idle", "locked", "moving", "not_selected"])
+    def test_hand_lost_quiet_when_not_driving_aihand(self, h, case):
+        """손이 AiHand를 움직이지 않을 때 끊기면 알림 없이 로그만 (설계 11장)."""
+        if case == "idle":
+            h.ready(1)
+        elif case == "locked":
+            h.manual(1, start=False)
+        elif case == "moving":
+            h.manual(1)
+            h.status(1, "driving", None, "storage_1")
+        else:
+            h.ready(2)
+            h.manual(1)
+            h.cmd("select_car", car=2)
+        h.hand()
+        h.clear()
+        h.hand(detected=False)
+        assert not h.alerts("hand_lost")
+        assert h.log.of("hand_detected")[-1]["detected"] is False
+        assert h.c.ui_state()["hand"]["detected"] is False     # 맨 위 줄에는 보임
+
+    def test_hand_lost_alert_while_catching_or_held(self, h):
+        h.manual(1)
+        h.hand((1, 1, 1, 1, 1), 0.0)
+        h.hand(HALF, 0.0)                             # 대기 1에서 놓기 막음
+        assert h.c.gate.release_hold
+        h.clear()
+        h.hand(detected=False)
+        assert h.alerts("hand_lost")
+
     def test_hand_service_down(self, h):
         h.manual(1)
         h.hand()

@@ -34,6 +34,9 @@ ERROR_TEXT = {
     "serial_fail": "AiHand 연결 오류",
 }
 
+# 손이 AiHand를 움직이는 중인 hand_ctl 값 (이때 손이 끊기면 hand_lost 알림)
+HAND_DRIVING = ("following", "catching", "release_hold")
+
 MODE_NAMES = {"idle": "대기", "manual": "조종", "teach": "가르치기", "auto": "혼자 하기", "stopped": "정지"}
 
 
@@ -249,6 +252,8 @@ class Control:
             self.log.event("service", name="hand", up=True)
             self.dirty = True
         was = self.hand_detected
+        # 끊기기 직전에 손이 AiHand를 움직이고 있었는지 (hand_lost 알림 조건, 설계 11장)
+        was_driving = self.hand_ctl(self.cars[self.selected]) in HAND_DRIVING
         self.hand_detected = msg["detected"]
         if not self.hand_detected:
             if self.hand_lost_since is None:
@@ -265,7 +270,8 @@ class Control:
         self.hand_fingers, self.hand_wrist = msg["fingers"], msg["wrist"]
         if was != self.hand_detected:
             self.dirty = True
-            if was and any(c.mode in ("manual", "teach") for c in self.cars.values()):
+            self.log.event("hand_detected", detected=self.hand_detected)   # 알림이 없어도 로그에는 남김
+            if was and was_driving:
                 self.alert("warn", self.selected, "hand_lost", "손 인식 끊김")
         self._live_hand(now, prev_t)
 
