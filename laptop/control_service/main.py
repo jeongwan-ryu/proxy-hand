@@ -16,11 +16,14 @@ asyncio 하나로 돌므로 core는 한 번에 한 곳에서만 불린다 (잠�
     보내기 ← core.take_outbox()              (받거나 tick한 직후 바로)
     ui/state → 브라우저                     (STATE_PERIOD_S마다 + core.dirty일 때 바로)
 
-실행: python -m laptop.control_service.main   (저장소 맨 위 폴더에서)
+실행 (저장소 맨 위 폴더에서):
+    python -m laptop.control_service.main
+    python -m laptop.control_service.main --network tests/fakes/network_local.yaml   # 노트북 안 가짜 작업차에 접속
 """
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import pathlib
 import socket
@@ -282,13 +285,22 @@ def load_calibs(net: Dict[str, Any]) -> Dict[int, Optional[Dict[str, Any]]]:
     return calibs
 
 
-def main() -> None:
-    net = config.load_network()                     # 틀리면 여기서 오류를 내고 멈춤
+def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+    ap = argparse.ArgumentParser(description="관제 서비스")
+    ap.add_argument("--network", type=pathlib.Path, default=config.NETWORK_YAML,
+                    help="네트워크 설정 파일 (기본: shared/config/network.yaml, "
+                         "가짜 작업차 시험: tests/fakes/network_local.yaml)")
+    return ap.parse_args(argv)
+
+
+def main(argv: Optional[List[str]] = None) -> None:
+    args = parse_args(argv)
+    net = config.load_network(args.network)         # 틀리면 여기서 오류를 내고 멈춤
     mp = config.load_map()
     calibs = load_calibs(net)
     log = Logbook()
     svc = ControlService(net, mp, calibs, TaskStore(), log)
-    print(f"관제 서비스: http://localhost:{net['laptop']['web_port']}  (로그 {log.folder})")
+    print(f"관제 서비스: http://localhost:{net['laptop']['web_port']}  (네트워크 {args.network}, 로그 {log.folder})")
     try:
         asyncio.run(svc.run())
     except KeyboardInterrupt:

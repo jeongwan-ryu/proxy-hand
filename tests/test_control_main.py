@@ -256,3 +256,31 @@ def test_bad_messages_do_not_kill_service(rig):
     with rig.ws() as ws:                              # 서비스가 살아 있음
         st = recv_until(ws, lambda x: x["topic"] == m.UI_STATE and x["cars"]["1"]["pi_state"] == "arrived")
         assert st is not None
+
+
+# ---------------------------------------------------------------------------
+# --network 옵션: 노트북 안 가짜 작업차에 접속 (6단계)
+# ---------------------------------------------------------------------------
+
+LOCAL_NETWORK = config.ROOT / "tests" / "fakes" / "network_local.yaml"
+
+
+def test_network_option_default_and_local():
+    from laptop.control_service.main import parse_args
+    assert parse_args([]).network == config.NETWORK_YAML
+    assert parse_args(["--network", str(LOCAL_NETWORK)]).network == LOCAL_NETWORK
+
+
+def test_local_network_cars_on_this_laptop_with_own_ports():
+    net = config.load_network(LOCAL_NETWORK)            # 형식이 틀리면 여기서 오류
+    cars = [net["cars"][str(n)] for n in m.CAR_IDS]
+    assert all(c["ip"] == "127.0.0.1" for c in cars)
+    ports = [c[k] for c in cars for k in ("hand_port", "cmd_port")]
+    assert len(set(ports)) == len(ports)                 # 두 작업차가 한 노트북에서 포트를 나눠 씀
+
+
+def test_local_network_same_timing_and_laptop_ports_as_real():
+    real, local = config.load_network(), config.load_network(LOCAL_NETWORK)
+    assert local["timing"] == real["timing"]
+    assert {k: v for k, v in local["laptop"].items() if k != "ip"} == \
+           {k: v for k, v in real["laptop"].items() if k != "ip"}
