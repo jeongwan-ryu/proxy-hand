@@ -1,6 +1,6 @@
 # laptop/ — 노트북 서비스
 
-- **환경:** Windows 11, Python 3.11 64비트, 저장소 맨 위의 `.venv` 하나. 패키지는 `laptop/requirements.txt`.
+- **환경:** Windows 11, Python 3.12 64비트, 저장소 맨 위의 `.venv` 하나. 패키지는 `laptop/requirements.txt`.
 - 셸 명령과 경로는 Windows 기준이다. `start_laptop.bat`은 CRLF 줄바꿈을 유지한다.
 
 ## 서비스 사이 연결 (자세한 내용은 `docs/05`)
