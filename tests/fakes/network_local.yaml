@@ -1,0 +1,21 @@
+# 노트북 한 대에서 시험할 때 쓰는 네트워크 설정 (shared/config/network.yaml과 같은 형식, 인터페이스 정의 9.1)
+# 작업차 2대가 모두 노트북 안(가짜 작업차, tests/fakes/fake_car.py)에 있으므로 IP는 127.0.0.1, 포트는 차마다 다르게.
+#   python -m laptop.control_service.main --network tests/fakes/network_local.yaml
+# 진짜 작업차와 시험할 때는 이 파일이 아니라 shared/config/network.yaml을 쓴다.
+laptop:
+  ip: 127.0.0.1
+  web_port: 8000
+  hand_pose_port: 5100
+  vision_state_port: 5101
+  hand_calib_port: 5102
+  map_video_port: 8090
+  hand_video_port: 8091
+cars:                       # aihand: 작업차 2도 aihand_A (aihand_B는 11/26 보정 전이라 없음)
+  "1": {ip: 127.0.0.1, hand_port: 5005, cmd_port: 5006, video_port: 8080, aihand: aihand_A}
+  "2": {ip: 127.0.0.1, hand_port: 5015, cmd_port: 5016, video_port: 8081, aihand: aihand_A}
+timing:                     # shared/config/network.yaml과 같은 값
+  heartbeat_s: 0.2
+  link_timeout_s: 1.0
+  status_period_s: 0.5
+  reconnect_s: 1.0
+  service_timeout_s: 1.0
