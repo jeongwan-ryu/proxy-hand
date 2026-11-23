@@ -57,9 +57,21 @@ def test_control_serves_screen_files(tmp_path):
     r = Rig(tmp_path)
     try:
         base = f"http://127.0.0.1:{r.net['laptop']['web_port']}"
-        for path, must in (("/", "car-template"), ("/app.js", "ui/cmd"), ("/style.css", "--manual")):
+        for path, must in (("/", "hand-line"), ("/app.js", "ui/cmd"), ("/style.css", "--manual")):
             with urllib.request.urlopen(base + path, timeout=3) as resp:
                 assert resp.status == 200
                 assert must in resp.read().decode("utf-8")
     finally:
         r.close()
+
+
+def test_every_hand_ctl_state_has_text():
+    # 손 상태 줄 (설계 9.6·9.7, 화면 12장): 관제가 보내는 hand_ctl 값마다 화면 문구가 있어야 함
+    block = re.search(r"const HAND_TEXT = \{([\s\S]*?)\n\};", APP).group(1)
+    keys = re.findall(r"^\s*([a-z_]+):", block, re.M)
+    assert sorted(keys) == sorted(m.HAND_CTL_STATES)
+
+
+def test_enter_key_allows_release_but_not_in_inputs():
+    # Enter = [놓기 허용] (설계 9.7), 이름 입력 칸의 Enter는 이름 저장
+    assert re.search(r'e\.key !== "Enter"[\s\S]*?INPUT[\s\S]*?allowRelease\(\)', APP)

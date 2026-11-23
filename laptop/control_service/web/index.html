@@ -10,8 +10,9 @@
   <!-- 조종 화면 (관제 서비스가 제공) — 담당: 이보연
        받는 것: ui/state, ui/alert (WebSocket ws://<관제>/ws)  /  보내는 것: ui/cmd
        영상 주소는 ui/state에 있는 것만 씀 (map_video_url, hand_video_url, cars.n.video_url)
-       배치: 시스템 설계 12장, 모양: docs/design/control_screen_stitch.html (인터넷 없이 뜨도록 CSS 파일 하나로 옮김)
-       관련 SR: SR-31~35, SR-40 / 메시지: 인터페이스 정의 6장 -->
+       배치: 시스템 설계 12장 — 조종하는 작업차(조종 대상)를 크게, 오른쪽에 손 인식·맵·다른 작업차, 알림은 아래(스크롤)
+       모양: docs/design/control_screen_stitch.html (인터넷 없이 뜨도록 CSS 파일 하나로 옮김)
+       관련 SR: SR-31~35, SR-40, SR-44, SR-45 / 메시지: 인터페이스 정의 6장 -->
 
   <!-- 맨 위 줄: 스크롤해도 붙어 있음 -->
   <header class="top">
@@ -33,133 +34,164 @@
   <div id="space-flash" class="space-flash" hidden>전체 정지 보냄</div>
 
   <main class="page">
-    <!-- 작업차 두 칸 (app.js가 template으로 채움) -->
-    <section class="cars" id="cars"></section>
-
-    <!-- 아래쪽 칸 -->
-    <section class="bottom">
-      <div class="panel map-panel">
-        <h3 class="panel-title">맵 위 영상</h3>
-        <div class="video map-video">
-          <img id="map-img" alt="">
-          <div class="video-empty" id="map-empty">영상 없음</div>
+    <div class="main">
+      <!-- 조종하는 작업차 (조종 대상): 손이 이 작업차 AiHand로 감 -->
+      <article class="panel car big" id="big">
+        <div class="ribbon"></div>
+        <div class="car-head">
+          <h2 class="car-name" id="big-name">작업차</h2>
+          <span class="chip-selected">조종 대상</span>
+          <span class="mode-chip" id="big-mode"></span>
+          <span class="link dot-text" id="big-link"></span>
         </div>
-      </div>
 
-      <div class="panel field-panel">
-        <h3 class="panel-title">보관함</h3>
-        <ul class="slots" id="slots">
-          <li data-slot="1"><span class="slot-name">1번</span><span class="marker"></span></li>
-          <li data-slot="2"><span class="slot-name">2번</span><span class="marker"></span></li>
-          <li data-slot="3"><span class="slot-name">3번</span><span class="marker"></span></li>
-        </ul>
-        <h3 class="panel-title sep">작업대</h3>
-        <dl class="rows">
-          <div><dt>작업대</dt><dd id="bench"></dd></div>
-          <div><dt>바이알</dt><dd id="bench-vial"></dd></div>
-          <div><dt>콕 LED</dt><dd id="cock-led"></dd></div>
-        </dl>
-      </div>
+        <!-- 가: 손이 이 AiHand를 움직이는지 (ui/state hand_ctl, 설계 9.6·9.7) -->
+        <div class="hand-line" id="hand-line">
+          <div class="hand-line-text"><span id="hand-line-text"></span>
+            <button class="btn danger" type="button" id="btn-release" hidden>놓기 허용 <kbd>Enter</kbd></button>
+          </div>
+          <div class="bars" id="bars" hidden>
+            <div class="bar-row"><span class="bar-label">AiHand</span><div class="bar-set" id="bars-aihand"></div></div>
+            <div class="bar-row"><span class="bar-label">내 손</span><div class="bar-set" id="bars-hand"></div></div>
+            <div class="bar-row bar-names"><span class="bar-label"></span><div class="bar-set"><span>엄지</span><span>검지</span><span>중지</span><span>약지</span><span>새끼</span></div></div>
+          </div>
+        </div>
 
-      <div class="right-col">
-        <div class="panel hand-panel">
-          <h3 class="panel-title">손 인식</h3>
-          <div class="hand-row">
-            <div class="hand-video-wrap">
-              <div class="video hand-video" id="hand-video">
-                <img id="hand-img" alt="">
-                <div class="video-empty" id="hand-empty">영상 없음</div>
-              </div>
-              <div class="hand-note" id="hand-note"></div>
+        <!-- 나: 다음 할 일 -->
+        <div class="next" id="next"></div>
+
+        <!-- 영상(왼쪽, 큰 칸 폭에 맞춰 커짐) + 오른쪽에 상태 한 줄·모드 버튼·정거장 -->
+        <div class="car-body">
+          <div class="video car-video">
+            <img id="big-img" alt="">
+            <div class="video-empty" id="big-empty">영상 없음</div>
+          </div>
+          <div class="car-side">
+            <div class="status-line">
+              <span><span class="k">위치</span> <b id="big-where"></b></span>
+              <span><span class="k">파이</span> <b id="big-pi"></b></span>
+              <span><span class="k">진행</span> <b id="big-progress"></b></span>
             </div>
-            <div class="hand-side">
-              <div id="hand-state" class="dot-text"></div>
-              <div id="hand-calib" class="muted"></div>
-              <button class="btn" type="button" id="btn-calib-open">손 펴기 기록</button>
-              <button class="btn" type="button" id="btn-calib-fist">주먹 기록</button>
+
+            <div class="btn-row modes">
+              <button class="btn" type="button" data-act="set_mode:idle">대기</button>
+              <button class="btn" type="button" data-act="set_mode:manual">조종</button>
+              <button class="btn" type="button" data-act="set_mode:teach">가르치기</button>
+              <button class="btn" type="button" data-act="record_end">기록 끝</button>
+              <button class="btn stop" type="button" data-act="stop">정지</button>
+            </div>
+
+            <!-- [기록 끝]을 누르면 열림 (브라우저 팝업은 스페이스바를 가로채므로 쓰지 않음) -->
+            <div class="inline-box" id="record-box" hidden>
+              <span>작업 이름</span>
+              <input id="record-name" type="text" maxlength="40" placeholder="예: 분주_1회 (공백 대신 _)">
+              <button class="btn primary" type="button" data-act="record_save">저장</button>
+              <button class="btn" type="button" data-act="record_cancel">취소</button>
+            </div>
+
+            <div class="sub">
+              <div class="sub-title st-title">정거장</div>
+              <div class="stations" id="stations"></div>
+              <div class="set-station">
+                <span class="sub-title">위치 지정</span>
+                <select id="set-station-select" aria-label="위치 지정 정거장"></select>
+                <button class="btn" type="button" data-act="set_station">위치 지정</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="panel alert-panel">
-          <h3 class="panel-title">알림 <span class="muted small">(새로 고침하면 비워짐)</span></h3>
-          <ol class="alerts" id="alerts"></ol>
+
+        <div class="sub task-row">
+          <span class="sub-title">작업</span>
+          <select id="task-select" aria-label="작업"></select>
+          <button class="btn" type="button" data-act="delete_ask">삭제</button>
+          <label class="repeat"><input type="checkbox" id="repeat-box"> 반복</label>
+          <button class="btn primary" type="button" data-act="start">시작</button>
+          <span class="divider"></span>
+          <span class="sub-title">결과</span>
+          <span class="result-cycle" id="big-result-cycle"></span>
+          <button class="btn ok" type="button" data-act="success">성공</button>
+          <button class="btn ng" type="button" data-act="fail">실패</button>
         </div>
+        <div class="inline-box" id="delete-box" hidden>
+          <span id="delete-text"></span>
+          <button class="btn stop" type="button" data-act="delete_yes">지우기</button>
+          <button class="btn" type="button" data-act="delete_no">취소</button>
+        </div>
+      </article>
+
+      <div class="side">
+        <!-- 손 인식 -->
+        <section class="panel hand-panel">
+          <div class="hand-row">
+            <div class="video hand-video" id="hand-video">
+              <img id="hand-img" alt="">
+              <div class="video-empty" id="hand-empty">영상 없음</div>
+            </div>
+            <div class="hand-side">
+              <h3 class="panel-title">손 인식</h3>
+              <div id="hand-state" class="dot-text"></div>
+              <div class="hand-note" id="hand-note"></div>
+              <div id="hand-calib" class="muted small"></div>
+              <div class="calib-btns">
+                <button class="btn" type="button" id="btn-calib-open">손 펴기 기록</button>
+                <button class="btn" type="button" id="btn-calib-fist">주먹 기록</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 맵 위 영상 + 보관함·작업대 -->
+        <section class="panel map-panel">
+          <div class="video map-video">
+            <img id="map-img" alt="">
+            <div class="video-empty" id="map-empty">영상 없음</div>
+          </div>
+          <div class="field">
+            <h3 class="panel-title">보관함</h3>
+            <ul class="slots" id="slots">
+              <li data-slot="1"><span>1번</span><span class="marker"></span></li>
+              <li data-slot="2"><span>2번</span><span class="marker"></span></li>
+              <li data-slot="3"><span>3번</span><span class="marker"></span></li>
+            </ul>
+            <h3 class="panel-title sep">작업대</h3>
+            <dl class="rows">
+              <div><dt>상태</dt><dd id="bench"></dd></div>
+              <div><dt>바이알</dt><dd id="bench-vial"></dd></div>
+              <div><dt>콕 LED</dt><dd id="cock-led"></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <!-- 다른 작업차 (작게): 조종하지 않는 동안에도 정지·결과는 여기서 -->
+        <article class="panel car mini" id="small">
+          <div class="ribbon"></div>
+          <div class="car-head">
+            <h2 class="car-name" id="small-name">작업차</h2>
+            <span class="mode-chip" id="small-mode"></span>
+            <span class="link dot-text" id="small-link"></span>
+          </div>
+          <dl class="rows">
+            <div><dt>위치</dt><dd id="small-where"></dd></div>
+            <div><dt>진행</dt><dd id="small-progress"></dd></div>
+          </dl>
+          <div class="small-btns">
+            <button class="btn stop" type="button" data-sact="stop">정지</button>
+            <span class="result-cycle" id="small-result-cycle"></span>
+            <button class="btn ok" type="button" data-sact="success">성공</button>
+            <button class="btn ng" type="button" data-sact="fail">실패</button>
+            <button class="btn primary switch" type="button" data-sact="select">이 작업차 조종</button>
+          </div>
+        </article>
       </div>
+    </div>
+
+    <!-- 알림: 아래로 스크롤해서 봄. 바로 앞과 같은 알림은 한 줄로 합침 -->
+    <section class="panel alert-panel">
+      <h3 class="panel-title">알림 <span class="muted small">(같은 알림이 이어지면 한 줄로 합침 · 새로 고침하면 비워짐 · 전체 기록은 로그 파일)</span></h3>
+      <ol class="alerts" id="alerts"></ol>
     </section>
   </main>
-
-  <!-- 작업차 칸 하나 -->
-  <template id="car-template">
-    <article class="panel car">
-      <div class="ribbon"></div>
-      <div class="car-head">
-        <h2 class="car-name"></h2>
-        <button class="select-chip" type="button" data-act="select"><span class="radio"></span>조종 대상</button>
-        <span class="link dot-text"></span>
-      </div>
-
-      <div class="car-body">
-        <div class="video car-video">
-          <img class="car-img" alt="">
-          <div class="video-empty">영상 없음</div>
-        </div>
-        <div class="car-status">
-          <div class="mode-label">모드</div>
-          <div class="mode-badge"></div>
-          <dl class="rows">
-            <div><dt>위치</dt><dd class="where"></dd></div>
-            <div><dt>파이</dt><dd class="pi"></dd></div>
-            <div><dt>진행</dt><dd class="progress"></dd></div>
-          </dl>
-        </div>
-      </div>
-
-      <div class="btn-row modes">
-        <button class="btn" type="button" data-act="set_mode:idle">대기</button>
-        <button class="btn" type="button" data-act="set_mode:manual">조종</button>
-        <button class="btn" type="button" data-act="set_mode:teach">가르치기</button>
-        <button class="btn" type="button" data-act="record_end">기록 끝</button>
-        <button class="btn stop" type="button" data-act="stop">정지</button>
-      </div>
-
-      <!-- [기록 끝]을 누르면 열림 (브라우저 팝업은 스페이스바를 가로채므로 쓰지 않음) -->
-      <div class="inline-box record-box" hidden>
-        <span>작업 이름</span>
-        <input class="record-name" type="text" maxlength="40" placeholder="예: 분주_1회 (공백 대신 _)">
-        <button class="btn primary" type="button" data-act="record_save">저장</button>
-        <button class="btn" type="button" data-act="record_cancel">취소</button>
-      </div>
-
-      <div class="sub">
-        <div class="sub-head"><span class="sub-title">정거장</span></div>
-        <div class="stations"></div>
-        <div class="set-station">
-          <select class="set-station-select" aria-label="위치 지정 정거장"></select>
-          <button class="btn" type="button" data-act="set_station">위치 지정</button>
-        </div>
-      </div>
-
-      <div class="sub task-row">
-        <span class="sub-title">작업</span>
-        <select class="task-select" aria-label="작업"></select>
-        <button class="btn" type="button" data-act="delete_ask">삭제</button>
-        <label class="repeat"><input type="checkbox" class="repeat-box"> 반복</label>
-        <button class="btn primary" type="button" data-act="start">시작</button>
-      </div>
-      <div class="inline-box delete-box" hidden>
-        <span class="delete-text"></span>
-        <button class="btn stop" type="button" data-act="delete_yes">지우기</button>
-        <button class="btn" type="button" data-act="delete_no">취소</button>
-      </div>
-
-      <div class="sub result-row">
-        <span class="sub-title">결과</span>
-        <span class="result-cycle muted"></span>
-        <button class="btn ok" type="button" data-act="success">성공</button>
-        <button class="btn ng" type="button" data-act="fail">실패</button>
-      </div>
-    </article>
-  </template>
 
   <script src="app.js"></script>
 </body>
